@@ -1,0 +1,89 @@
+---
+cli:
+    name: test
+    options:
+        - name: server
+          alias: [s]
+          type: string
+          default: '127.0.0.1:8080'
+    commands:
+        - name: defs
+          alias: [d]
+          arguments:
+              - name: str
+                type: string
+              - name: int
+                type: integer
+              - name: num
+                type: number
+              - name: dict
+                type: dict
+              - name: slice
+                type: string
+                list: true
+        - name: reqs
+          options:
+              - name: req1
+                type: string
+                required: true
+        - name: up
+          options:
+              - name: delay
+                alias: [d]
+                type: integer/unsigned
+                default: '10'
+              - name: flaga
+                alias: [a]
+                type: boolean
+              - name: flagb
+                alias: [b]
+                type: boolean
+          arguments:
+              - name: object
+                type: string
+                required: true
+        - name: down
+          options:
+              - name: flag
+                alias: [f]
+                type: string
+              - name: wait
+                alias: [w]
+                type: boolean
+                default: true
+        - name: list
+          options:
+              - name: items
+                type: integer
+                list: true
+                required: true
+              - name: adds
+                type: number
+                list: true
+                default: 3.14
+        - name: map
+          options:
+              - name: kv
+                type: map
+                default: a=a1
+              - name: no-defs
+                type: map
+                required: true
+        - name: objects
+          commands:
+              - name: create
+                arguments:
+                    - name: type
+                      type: string
+                      required: true
+              - name: show
+                arguments:
+                    - name: id
+                      type: string
+                      list: true
+              - name: delete
+                arguments:
+                    - name: id
+                      type: string
+                      list: true
+                      required: true

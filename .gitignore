@@ -1,0 +1,6 @@
+_*
+*.log
+*.out
+
+/vendor/
+!/vendor/manifest

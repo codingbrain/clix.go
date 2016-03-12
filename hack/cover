@@ -1,0 +1,10 @@
+#!/bin/bash
+. hack/functions.sh
+env-setup
+cov-run
+cov-collect
+
+case "$1" in
+    html|func) cov-report $1 ;;
+    *) ;;
+esac

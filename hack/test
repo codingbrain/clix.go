@@ -1,0 +1,3 @@
+#!/bin/bash
+. hack/functions.sh
+go test -v $(for-each-pkg eval 'echo ./$PKG/...')
