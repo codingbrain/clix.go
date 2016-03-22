@@ -16,12 +16,18 @@ type ParseContext struct {
 	Assigned interface{}
 	Ignore   bool
 
-	parser  *Parser
-	stopped bool
+	parser   *Parser
+	stopped  bool
+	abortErr error
 }
 
 func (c *ParseContext) Done() {
 	c.stopped = true
+}
+
+func (c *ParseContext) Abort(err error) {
+	c.stopped = true
+	c.abortErr = err
 }
 
 func (c *ParseContext) CmdStack() []*ParsedCmd {

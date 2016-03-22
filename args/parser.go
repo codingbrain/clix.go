@@ -3,13 +3,14 @@ package args
 import (
 	"reflect"
 	"strings"
-
-	"github.com/codingbrain/clix.go/clix"
 )
 
 const (
-	VarErrNoDef  = 0
-	VarErrNoVal  = 1
+	// VarErrNoDef means option is not defined
+	VarErrNoDef = 0
+	// VarErrNoVal means option is expecting a value but not specified
+	VarErrNoVal = 1
+	// VarErrBadVal means the value is invalid (e.g. unable to parse)
 	VarErrBadVal = 2
 
 	statePre    = "p"
@@ -20,6 +21,7 @@ const (
 	stateEnd    = "d"
 )
 
+// VarError records any errors during parsing process
 type VarError struct {
 	Name    string
 	Value   *string
@@ -27,6 +29,7 @@ type VarError struct {
 	ErrType int
 }
 
+// ParsedCmd represent a Command which is being parsed or parsed in stack
 type ParsedCmd struct {
 	Cmd        *Command
 	Args       []string
@@ -35,6 +38,7 @@ type ParsedCmd struct {
 	Errs       []*VarError
 }
 
+// ParseResult represent the result of parsing process
 type ParseResult struct {
 	Program      string
 	CmdStack     []*ParsedCmd
@@ -45,6 +49,7 @@ type ParseResult struct {
 	exts []ExecExt
 }
 
+// Parser is the state machine for parsing args
 type Parser struct {
 	rootCmd *Command
 	result  ParseResult
@@ -122,9 +127,8 @@ func (pcmd *ParsedCmd) hasSubCommands() bool {
 func (pcmd *ParsedCmd) startSubCommand(name string) *ParsedCmd {
 	if cmd := pcmd.Cmd.FindCommand(name); cmd != nil {
 		return newParsedCmd(cmd)
-	} else {
-		return nil
 	}
+	return nil
 }
 
 func (pcmd *ParsedCmd) assignOption(opt *Option, val string, valNot bool) (parsedVal interface{}, err error) {
@@ -132,7 +136,7 @@ func (pcmd *ParsedCmd) assignOption(opt *Option, val string, valNot bool) (parse
 		pcmd.varBadVal(opt, &val)
 		return
 	} else if opt.ValueKind == reflect.Map {
-		var destMap map[string]interface{} = nil
+		var destMap map[string]interface{}
 		if dictVal, exists := pcmd.Vars[opt.Name]; exists {
 			if dict, ok := dictVal.(map[string]interface{}); ok {
 				destMap = dict
@@ -151,7 +155,7 @@ func (pcmd *ParsedCmd) assignOption(opt *Option, val string, valNot bool) (parse
 			parsedVal = !parsedVal.(bool)
 		}
 		if opt.List {
-			var destList *[]interface{} = nil
+			var destList *[]interface{}
 			if listVal, exists := pcmd.Vars[opt.Name]; exists {
 				if list, ok := listVal.([]interface{}); ok {
 					destList = &list
@@ -161,14 +165,13 @@ func (pcmd *ParsedCmd) assignOption(opt *Option, val string, valNot bool) (parse
 				destList = &[]interface{}{}
 			}
 			parsedVal = append(*destList, parsedVal)
-		} else {
-			parsedVal = parsedVal
 		}
 	}
 	pcmd.Vars[opt.Name] = parsedVal
 	return
 }
 
+// Parser creates a parser with current command as root command
 func (cmd *Command) Parser() *Parser {
 	return &Parser{
 		rootCmd: cmd,
@@ -205,6 +208,10 @@ func (p *Parser) invokeExts(event string, ctx *ParseContext) {
 		if ext != nil {
 			ext.HandleParseEvent(event, ctx)
 		}
+	}
+	if ctx.abortErr != nil {
+		p.result.Error = ctx.abortErr
+		p.state = stateErrEnd
 	}
 }
 
@@ -264,12 +271,7 @@ func (p *Parser) resolveUnknownCommand(cmd string) {
 	p.state = stateErr
 }
 
-func (p *Parser) Consume(v interface{}) error {
-	arg, ok := v.(string)
-	if !ok {
-		return clix.ErrorTypeNotSupported
-	}
-
+func (p *Parser) parseArg(arg string) {
 	switch p.state {
 	case statePre:
 		p.startParsing(arg)
@@ -278,10 +280,10 @@ func (p *Parser) Consume(v interface{}) error {
 			p.state = stateEnd
 		} else if strings.HasPrefix(arg, "--") {
 			name := arg[2:]
-			var val *string = nil
+			var val *string
 			if pos := strings.IndexByte(name, '='); pos == 0 {
 				p.currCmd.varNoDef(arg)
-				return nil
+				return
 			} else if pos > 0 {
 				valStr := name[pos+1:]
 				val = &valStr
@@ -366,10 +368,9 @@ func (p *Parser) Consume(v interface{}) error {
 	case stateErrEnd:
 		p.result.UnparsedArgs = append(p.result.UnparsedArgs, arg)
 	}
-	return nil
 }
 
-func (p *Parser) End() error {
+func (p *Parser) parseEnd() error {
 	if p.state == statePre {
 		// nothing parsed
 		return ErrArgsTooFew
@@ -383,49 +384,56 @@ func (p *Parser) End() error {
 	if p.state == stateCmd || p.state == stateEnd {
 		p.currCmd.verifyRequiredArgs()
 	}
-	return nil
+	return p.result.Error
 }
 
+// ParseArgs parses a slice of arguments including args[0]
 func (p *Parser) ParseArgs(args []string) *ParseResult {
-	a := NewArgsWith(args)
-	a.EmitTo(p)
-	p.result.Error = a.Parse()
+	for _, arg := range args {
+		p.parseArg(arg)
+	}
+	p.result.Error = p.parseEnd()
 	return &p.result
 }
 
+// Use registers an extension to current parser
 func (p *Parser) Use(extReg ExtRegistrar) *Parser {
 	extReg.RegisterExt(p)
 	return p
 }
 
+// AddParseExt registers a parser extension
 func (p *Parser) AddParseExt(event string, ext ParseExt) *Parser {
 	p.exts[event] = append(p.exts[event], ext)
 	return p
 }
 
+// AddExecExt registers an execution extension to ParseResult
 func (p *Parser) AddExecExt(ext ExecExt) *Parser {
 	p.result.AddExt(ext)
 	return p
 }
 
+// AddExt registers an execution extension
 func (r *ParseResult) AddExt(ext ExecExt) *ParseResult {
 	r.exts = append(r.exts, ext)
 	return r
 }
 
+// HasErrors indicates any errors in ParseResult
 func (r *ParseResult) HasErrors() bool {
 	if r.Error != nil || r.MissingCmd {
 		return true
-	} else {
-		for _, pcmd := range r.CmdStack {
-			if len(pcmd.Errs) > 0 {
-				return true
-			}
+	}
+	for _, pcmd := range r.CmdStack {
+		if len(pcmd.Errs) > 0 {
+			return true
 		}
 	}
 	return false
 }
 
+// Exec applies the execution extensions
 func (r *ParseResult) Exec() error {
 	ctx := &ExecContext{Result: r, err: r.Error}
 	for _, ext := range r.exts {

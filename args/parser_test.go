@@ -546,6 +546,35 @@ func TestParseExtDone(t *testing.T) {
 	}
 }
 
+type testAbortExt struct {
+	t       *testing.T
+	touched bool
+}
+
+func (x *testAbortExt) HandleParseEvent(event string, ctx *ParseContext) {
+	a := assert.New(x.t)
+	a.Equal(EvtResolveOpt, event)
+	x.touched = true
+	ctx.Abort(errors.New("aborted: " + ctx.Name))
+}
+
+func TestParseExtAbort(t *testing.T) {
+	a := assert.New(t)
+	x1 := &testAbortExt{t: t}
+	x2 := &testAbortExt{t: t}
+	r := cli.Cli.Parser().
+		AddParseExt(EvtResolveOpt, x1).
+		AddParseExt(EvtResolveOpt, x2).
+		ParseArgs([]string{"cli", "--unknown", "up"})
+	if a.Error(r.Error) {
+		a.Equal("aborted: unknown", r.Error.Error())
+		a.True(x1.touched)
+		a.False(x2.touched)
+		a.Len(r.UnparsedArgs, 1)
+		a.Equal("up", r.UnparsedArgs[0])
+	}
+}
+
 type testExecExt struct {
 	t *testing.T
 	r *ParseResult

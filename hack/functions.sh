@@ -1,5 +1,5 @@
 OUTDIR=_out
-PKGS="clix args exts"
+PKGS="clix args exts/bind exts/help"
 
 env-setup() {
     mkdir -p $OUTDIR
@@ -16,6 +16,8 @@ COV_REPORT=$OUTDIR/all.cov
 : ${COV_MODE:=set}
 
 cov-run-pkg() {
+    local covfn="$OUTDIR/$PKG.cov"
+    mkdir -p "$(dirname $covfn)"
     go test -v \
         -cover \
         -covermode $COV_MODE \

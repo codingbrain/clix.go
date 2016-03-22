@@ -115,6 +115,17 @@ func (opt *Option) DefaultAsString() string {
 	}
 }
 
+func (opt *Option) ValueName() string {
+	if opt.Var != "" {
+		return opt.Var
+	}
+	return opt.Name
+}
+
+func (opt *Option) ExpectValue() bool {
+	return opt.IsArg || opt.ValueKind != reflect.Bool
+}
+
 func (opt *Option) defError(cmdPath, msg string) *CmdDefError {
 	return &CmdDefError{cmdPath + "[" + opt.Name + "]", msg}
 }
@@ -125,7 +136,7 @@ func (opt *Option) normalizeType(cmdPath string) error {
 		opt.Type = opt.Type[0:pos]
 	}
 	switch opt.Type {
-	case "string", "str", "text":
+	case "string", "str", "text", "":
 		opt.ValueKind = reflect.String
 	case "integer", "int":
 		opt.ValueKind = reflect.Int64
