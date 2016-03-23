@@ -1,6 +1,7 @@
 package args
 
 import (
+	"os"
 	"reflect"
 	"strings"
 )
@@ -396,6 +397,11 @@ func (p *Parser) ParseArgs(args []string) *ParseResult {
 	return &p.result
 }
 
+// Parse parses args from os.Args
+func (p *Parser) Parse() *ParseResult {
+	return p.ParseArgs(os.Args)
+}
+
 // Use registers an extension to current parser
 func (p *Parser) Use(extReg ExtRegistrar) *Parser {
 	extReg.RegisterExt(p)
@@ -435,12 +441,12 @@ func (r *ParseResult) HasErrors() bool {
 
 // Exec applies the execution extensions
 func (r *ParseResult) Exec() error {
-	ctx := &ExecContext{Result: r, err: r.Error}
+	ctx := &ExecContext{Result: r}
 	for _, ext := range r.exts {
 		if ctx.completed {
 			break
 		}
 		ext.ExecuteCmd(ctx)
 	}
-	return ctx.err
+	return r.Error
 }

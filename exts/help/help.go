@@ -66,6 +66,7 @@ type HelpExt struct {
 	Alias    []string
 	Render   HelpRender
 	ExitCode int
+	AnyError bool
 
 	helpCmdAt int
 }
@@ -77,6 +78,7 @@ func NewExt() *HelpExt {
 		Alias:     DefaultAlias,
 		Render:    &DefaultRender{},
 		ExitCode:  2,
+		AnyError:  true,
 		helpCmdAt: -1,
 	}
 }
@@ -114,6 +116,10 @@ func (x *HelpExt) ExecuteCmd(ctx *args.ExecContext) {
 		x.exit()
 		return
 	} else if err != nil {
+		if err != ErrorHelp && x.AnyError {
+			x.displayErrors([]*ErrInfo{&ErrInfo{Msg: err.Error()}})
+			x.exit()
+		}
 		return
 	}
 
@@ -262,7 +268,7 @@ func (x *HelpExt) displayErrors(errs []*ErrInfo) {
 	for _, err := range errs {
 		if err.Cmd != "" {
 			err.Msg = "unknown command: " + err.Cmd
-		} else {
+		} else if err.Var != nil {
 			switch err.Var.ErrType {
 			case args.VarErrNoDef:
 				err.Msg = "unknown option: " + err.Var.Name

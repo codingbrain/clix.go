@@ -61,7 +61,6 @@ type ExecContext struct {
 	Result *ParseResult
 
 	completed bool
-	err       error
 }
 
 func (c *ExecContext) Cmd() *ParsedCmd {
@@ -80,12 +79,14 @@ func (c *ExecContext) CmdAt(at int) *ParsedCmd {
 }
 
 func (c *ExecContext) HasErrors() bool {
-	return c.err != nil || c.Result.HasErrors()
+	return c.Result.HasErrors()
 }
 
 func (c *ExecContext) Done(err error) {
+	if err != nil {
+		c.Result.Error = err
+	}
 	c.completed = true
-	c.err = err
 }
 
 type ParseExt interface {

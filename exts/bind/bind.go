@@ -59,7 +59,11 @@ func (x *BindExt) HandleParseEvent(event string, ctx *args.ParseContext) {
 func (x *BindExt) ExecuteCmd(ctx *args.ExecContext) {
 	b, exists := x.b[keyFromStack(ctx.Result.CmdStack)]
 	if exists && b.execCmd != nil && !ctx.HasErrors() {
-		ctx.Done(b.execCmd(ctx.Cmd().Args))
+		if err := b.execCmd(ctx.Cmd().Args); err != nil {
+			ctx.Result.Error = err
+		} else {
+			ctx.Done(nil)
+		}
 	}
 }
 

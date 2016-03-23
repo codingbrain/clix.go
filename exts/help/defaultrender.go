@@ -1,16 +1,16 @@
 package help
 
 import (
-	"fmt"
 	"io"
-	"os"
 	"strings"
 
 	"github.com/codingbrain/clix.go/args"
+	"github.com/codingbrain/clix.go/term"
 )
 
 type DefaultRender struct {
 	Output io.Writer
+	Plain  bool // no styles
 }
 
 type twoColRow struct {
@@ -21,7 +21,7 @@ type twoColRender struct {
 	rows []*twoColRow
 }
 
-func (r *twoColRender) render(out io.Writer) {
+func (r *twoColRender) render(printer *term.Printer) {
 	maxlen := 0
 	for _, row := range r.rows {
 		if l := len(row.col[0]); l > maxlen {
@@ -49,31 +49,37 @@ func (r *twoColRender) render(out io.Writer) {
 		lines := strings.Split(row.col[1], "\n")
 		for l, line := range lines {
 			noNewline := strings.TrimSpace(line)
+			printer.Print("  ")
 			if l == 0 {
-				fmt.Fprintln(out, "    "+col0+noNewline)
+				if !example {
+					printer.Styles(term.StyleB)
+				}
+				printer.Print(col0).Reset().Println(noNewline)
 			} else {
-				fmt.Fprintln(out, "    "+spaces+noNewline)
+				printer.Println(spaces + noNewline)
 			}
 		}
 		if example {
-			fmt.Fprintln(out, "")
+			printer.Println("")
 		}
 	}
 }
 
 func (r *DefaultRender) RenderBanner(info *BannerInfo) {
 	for _, line := range info.Banner {
-		r.println(line)
+		r.printer().Println(line)
 	}
 }
 
 func (r *DefaultRender) RenderUsage(info *UsageInfo) {
-	out := append([]string{"Usage:"}, info.Cmds...)
-	out = append(out, info.Opts...)
-	out = append(out, info.Args...)
-	out = append(out, info.Tail...)
-	r.println(strings.Join(out, " "))
-	r.println("")
+	printer := r.printer()
+	printer.
+		Styles(term.StyleHi, term.StyleI).Print("Usage").Reset().Print(": ").
+		Styles(term.StyleB).Print(strings.Join(info.Cmds, " ")).Reset()
+	strs := append([]string{}, info.Opts...)
+	strs = append(strs, info.Args...)
+	strs = append(strs, info.Tail...)
+	printer.Print(" " + strings.Join(strs, " ")).Println("\n")
 }
 
 func (r *DefaultRender) RenderCommands(cmds []*args.Command) {
@@ -85,9 +91,10 @@ func (r *DefaultRender) RenderCommands(cmds []*args.Command) {
 			cr.rows = append(cr.rows, &twoColRow{col: []string{"", cmd.Example}})
 		}
 	}
-	r.println("Commands:")
-	cr.render(r.out())
-	r.println("")
+	printer := r.printer()
+	printer.Styles(term.StyleHi, term.StyleI).Print("Commands").Reset().Println(":")
+	cr.render(printer)
+	printer.Println("")
 }
 
 func (r *DefaultRender) RenderArguments(opts []*args.Option) {
@@ -98,9 +105,10 @@ func (r *DefaultRender) RenderArguments(opts []*args.Option) {
 			cr.rows = append(cr.rows, &twoColRow{col: []string{"", opt.Example}})
 		}
 	}
-	r.println("Arguments:")
-	cr.render(r.out())
-	r.println("")
+	printer := r.printer()
+	printer.Styles(term.StyleHi, term.StyleI).Print("Arguments").Reset().Println(":")
+	cr.render(printer)
+	printer.Println("")
 }
 
 func (r *DefaultRender) RenderOptions(opts []*args.Option) {
@@ -138,24 +146,21 @@ func (r *DefaultRender) RenderOptions(opts []*args.Option) {
 			cr.rows = append(cr.rows, &twoColRow{col: []string{"", opt.Example}})
 		}
 	}
-	r.println("Options:")
-	cr.render(r.out())
-	r.println("")
+	printer := r.printer()
+	printer.Styles(term.StyleHi, term.StyleI).Print("Options").Reset().Println(":")
+	cr.render(printer)
+	printer.Println("")
 }
 
 func (r *DefaultRender) RenderErrors(errs []*ErrInfo) {
 	for _, err := range errs {
-		r.println("ERROR: " + err.Msg)
+		r.printer().Styles(term.StyleErr).Println("ERROR: " + err.Msg).Reset()
 	}
 }
 
-func (r *DefaultRender) out() io.Writer {
+func (r *DefaultRender) printer() *term.Printer {
 	if r.Output != nil {
-		return r.Output
+		return term.NewPrinter(r.Output)
 	}
-	return os.Stderr
-}
-
-func (r *DefaultRender) println(msg string) {
-	fmt.Fprintln(r.out(), msg)
+	return term.NewPrinter(term.Std)
 }
