@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/codingbrain/clix.go/args"
+	"github.com/codingbrain/clix.go/exts/ask"
 	"github.com/codingbrain/clix.go/exts/bind"
 	"github.com/codingbrain/clix.go/exts/help"
 	"github.com/codingbrain/clix.go/term"
@@ -41,19 +42,21 @@ func checkFd(fd uintptr) error {
 }
 
 func main() {
-	rootCmd := &args.Command{
-		Name: "istty",
-		Arguments: []*args.Option{
-			&args.Option{
-				Name:     "path",
-				Alias:    []string{"fd"},
-				Desc:     "path to device or file descriptor",
-				Required: true,
+	cli := &args.CliDef{
+		Cli: &args.Command{
+			Name: "istty",
+			Arguments: []*args.Option{
+				&args.Option{
+					Name:     "path",
+					Alias:    []string{"fd"},
+					Desc:     "path to device or file descriptor",
+					Required: true,
+				},
 			},
 		},
 	}
-	rootCmd.Normalize()
-	rootCmd.Parser().
+	cli.Normalize()
+	cli.Use(ask.NewExt()).
 		Use(bind.NewExt().Bind(&isttyCmd{})).
 		Use(help.NewExt()).
 		Parse().Exec()

@@ -19,7 +19,7 @@ func loadCli() *CliDef {
 
 func TestShortFlags(t *testing.T) {
 	a := assert.New(t)
-	r := cli.Cli.Parser().ParseArgs([]string{"cli", "up", "-a", "a1"})
+	r := cli.ParseArgs("cli", "up", "-a", "a1")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 2) && a.False(r.MissingCmd) {
 		a.False(r.HasErrors())
 		a.Equal("cli", r.Program)
@@ -38,7 +38,7 @@ func TestShortFlags(t *testing.T) {
 		a.True(cs.Vars["flaga"].(bool))
 		a.False(cs.Vars["flagb"].(bool))
 	}
-	r = cli.Cli.Parser().ParseArgs([]string{"cli", "up", "-ab", "a1"})
+	r = cli.ParseArgs("cli", "up", "-ab", "a1")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 2) && a.False(r.MissingCmd) {
 		a.False(r.HasErrors())
 		cs := r.CmdStack[1]
@@ -48,7 +48,7 @@ func TestShortFlags(t *testing.T) {
 		a.True(cs.Vars["flaga"].(bool))
 		a.True(cs.Vars["flagb"].(bool))
 	}
-	r = cli.Cli.Parser().ParseArgs([]string{"cli", "up", "-a", "-b", "a1"})
+	r = cli.ParseArgs("cli", "up", "-a", "-b", "a1")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 2) && a.False(r.MissingCmd) {
 		a.False(r.HasErrors())
 		cs := r.CmdStack[1]
@@ -59,7 +59,7 @@ func TestShortFlags(t *testing.T) {
 
 func TestLongFlags(t *testing.T) {
 	a := assert.New(t)
-	r := cli.Cli.Parser().ParseArgs([]string{"cli", "--server=123", "up", "--flaga", "--no-flagb"})
+	r := cli.ParseArgs("cli", "--server=123", "up", "--flaga", "--no-flagb")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 2) && a.False(r.MissingCmd) {
 		a.True(r.HasErrors())
 		cs := r.CmdStack[0]
@@ -81,7 +81,7 @@ func TestLongFlags(t *testing.T) {
 			a.Nil(cs.Errs[0].Value)
 		}
 	}
-	r = cli.Cli.Parser().ParseArgs([]string{"cli", "down", "-fVAL"})
+	r = cli.ParseArgs("cli", "down", "-fVAL")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 2) && a.False(r.MissingCmd) {
 		a.False(r.HasErrors())
 		cs := r.CmdStack[1]
@@ -91,7 +91,7 @@ func TestLongFlags(t *testing.T) {
 		a.Equal("VAL", cs.Vars["flag"].(string))
 		a.True(cs.Vars["wait"].(bool))
 	}
-	r = cli.Cli.Parser().ParseArgs([]string{"cli", "down", "-wf", "VAL", "a1"})
+	r = cli.ParseArgs("cli", "down", "-wf", "VAL", "a1")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 2) && a.False(r.MissingCmd) {
 		a.False(r.HasErrors())
 		cs := r.CmdStack[1]
@@ -101,7 +101,7 @@ func TestLongFlags(t *testing.T) {
 		a.True(cs.Vars["wait"].(bool))
 		a.Equal("VAL", cs.Vars["flag"].(string))
 	}
-	r = cli.Cli.Parser().ParseArgs([]string{"cli", "down", "-f", "VAL", "--no-wait"})
+	r = cli.ParseArgs("cli", "down", "-f", "VAL", "--no-wait")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 2) && a.False(r.MissingCmd) {
 		a.False(r.HasErrors())
 		cs := r.CmdStack[1]
@@ -113,7 +113,7 @@ func TestLongFlags(t *testing.T) {
 
 func TestDefaults(t *testing.T) {
 	a := assert.New(t)
-	r := cli.Cli.Parser().ParseArgs([]string{"cli", "defs"})
+	r := cli.ParseArgs("cli", "defs")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 2) && a.False(r.MissingCmd) {
 		a.False(r.HasErrors())
 		cs := r.CmdStack[1]
@@ -125,7 +125,7 @@ func TestDefaults(t *testing.T) {
 		a.Equal(map[string]interface{}{}, cs.Vars["dict"])
 		a.Equal("", cs.Vars["slice"]) // args should never be list
 	}
-	r = cli.Cli.Parser().ParseArgs([]string{"cli", "d"})
+	r = cli.ParseArgs("cli", "d")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 2) && a.False(r.MissingCmd) {
 		a.False(r.HasErrors())
 		cs := r.CmdStack[1]
@@ -136,7 +136,7 @@ func TestDefaults(t *testing.T) {
 
 func TestListOptions(t *testing.T) {
 	a := assert.New(t)
-	r := cli.Cli.Parser().ParseArgs([]string{"cli", "list", "--items=164", "--items=682", "--adds=6"})
+	r := cli.ParseArgs("cli", "list", "--items=164", "--items=682", "--adds=6")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 2) && a.False(r.MissingCmd) {
 		a.False(r.HasErrors())
 		cs := r.CmdStack[1]
@@ -157,7 +157,7 @@ func TestListOptions(t *testing.T) {
 
 func TestMapOptions(t *testing.T) {
 	a := assert.New(t)
-	r := cli.Cli.Parser().ParseArgs([]string{"cli", "map", "--kv=b=b1", "--kv=c=c1", "--no-defs=x=x"})
+	r := cli.ParseArgs("cli", "map", "--kv=b=b1", "--kv=c=c1", "--no-defs=x=x")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 2) && a.False(r.MissingCmd) {
 		a.False(r.HasErrors())
 		cs := r.CmdStack[1]
@@ -174,7 +174,7 @@ func TestMapOptions(t *testing.T) {
 			a.Equal("x", dict["x"])
 		}
 	}
-	r = cli.Cli.Parser().ParseArgs([]string{"cli", "map", "--kv=a=b1", "--kv=c=c1", "--no-defs=x"})
+	r = cli.ParseArgs("cli", "map", "--kv=a=b1", "--kv=c=c1", "--no-defs=x")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 2) && a.False(r.MissingCmd) {
 		a.False(r.HasErrors())
 		cs := r.CmdStack[1]
@@ -195,7 +195,7 @@ func TestMapOptions(t *testing.T) {
 func TestMissingRequired(t *testing.T) {
 	a := assert.New(t)
 	// required opt
-	r := cli.Cli.Parser().ParseArgs([]string{"cli", "reqs", "a", "b"})
+	r := cli.ParseArgs("cli", "reqs", "a", "b")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 2) && a.False(r.MissingCmd) {
 		a.True(r.HasErrors())
 		cs := r.CmdStack[1]
@@ -206,7 +206,7 @@ func TestMissingRequired(t *testing.T) {
 		}
 	}
 	// required arg
-	r = cli.Cli.Parser().ParseArgs([]string{"cli", "up"})
+	r = cli.ParseArgs("cli", "up")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 2) && a.False(r.MissingCmd) {
 		a.True(r.HasErrors())
 		cs := r.CmdStack[1]
@@ -221,7 +221,7 @@ func TestMissingRequired(t *testing.T) {
 func TestMissingValue(t *testing.T) {
 	a := assert.New(t)
 	// missing long flag value
-	r := cli.Cli.Parser().ParseArgs([]string{"cli", "reqs", "--req1", "a"})
+	r := cli.ParseArgs("cli", "reqs", "--req1", "a")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 2) && a.False(r.MissingCmd) {
 		a.True(r.HasErrors())
 		cs := r.CmdStack[1]
@@ -232,7 +232,7 @@ func TestMissingValue(t *testing.T) {
 		}
 	}
 	// missing short flag value
-	r = cli.Cli.Parser().ParseArgs([]string{"cli", "down", "-f"})
+	r = cli.ParseArgs("cli", "down", "-f")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 2) && a.False(r.MissingCmd) {
 		a.True(r.HasErrors())
 		cs := r.CmdStack[1]
@@ -248,7 +248,7 @@ func TestMissingValue(t *testing.T) {
 func TestBadValue(t *testing.T) {
 	a := assert.New(t)
 	// missing long flag value
-	r := cli.Cli.Parser().ParseArgs([]string{"cli", "defs", "str", "not-int", "not-num", "="})
+	r := cli.ParseArgs("cli", "defs", "str", "not-int", "not-num", "=")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 2) && a.False(r.MissingCmd) {
 		a.True(r.HasErrors())
 		cs := r.CmdStack[1]
@@ -277,7 +277,7 @@ func TestBadValue(t *testing.T) {
 
 func TestInvalidOpt(t *testing.T) {
 	a := assert.New(t)
-	r := cli.Cli.Parser().ParseArgs([]string{"cli", "up", "--unknown=1", "-x", "--no-unknown", "obj"})
+	r := cli.ParseArgs("cli", "up", "--unknown=1", "-x", "--no-unknown", "obj")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 2) && a.False(r.MissingCmd) {
 		a.True(r.HasErrors())
 		cs := r.CmdStack[1]
@@ -297,7 +297,7 @@ func TestInvalidOpt(t *testing.T) {
 		}
 	}
 
-	r = cli.Cli.Parser().ParseArgs([]string{"cli", "up", "--=1", "obj"})
+	r = cli.ParseArgs("cli", "up", "--=1", "obj")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 2) && a.False(r.MissingCmd) {
 		a.True(r.HasErrors())
 		cs := r.CmdStack[1]
@@ -312,12 +312,12 @@ func TestInvalidOpt(t *testing.T) {
 
 func TestMissingCmd(t *testing.T) {
 	a := assert.New(t)
-	r := cli.Cli.Parser().ParseArgs([]string{"cli", "not-exist", "a", "b"})
+	r := cli.ParseArgs("cli", "not-exist", "a", "b")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 1) && a.True(r.MissingCmd) {
 		a.True(r.HasErrors())
 		a.Equal([]string{"not-exist", "a", "b"}, r.UnparsedArgs)
 	}
-	r = cli.Cli.Parser().ParseArgs([]string{"cli", "not-exist", "a", "--", "b"})
+	r = cli.Parser().ParseArgs("cli", "not-exist", "a", "--", "b")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 1) && a.True(r.MissingCmd) {
 		a.True(r.HasErrors())
 		a.Equal([]string{"not-exist", "a", "b"}, r.UnparsedArgs)
@@ -326,7 +326,7 @@ func TestMissingCmd(t *testing.T) {
 
 func TestStopParsing(t *testing.T) {
 	a := assert.New(t)
-	r := cli.Cli.Parser().ParseArgs([]string{"cli", "up", "--", "b", "c"})
+	r := cli.ParseArgs("cli", "up", "--", "b", "c")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 2) && a.False(r.MissingCmd) {
 		a.False(r.HasErrors())
 		cs := r.CmdStack[1]
@@ -340,7 +340,7 @@ func TestStopParsing(t *testing.T) {
 
 func TestNoSubCmd(t *testing.T) {
 	a := assert.New(t)
-	r := cli.Cli.Parser().ParseArgs([]string{"cli", "-sA"})
+	r := cli.ParseArgs("cli", "-sA")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 1) && a.False(r.MissingCmd) {
 		a.False(r.HasErrors())
 		cs := r.CmdStack[0]
@@ -348,13 +348,13 @@ func TestNoSubCmd(t *testing.T) {
 			a.Equal("A", cs.Vars["server"].(string))
 		}
 	}
-	r = cli.Cli.Parser().ParseArgs([]string{"cli"})
+	r = cli.ParseArgs("cli")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 1) && a.False(r.MissingCmd) {
 		a.False(r.HasErrors())
 		cs := r.CmdStack[0]
 		a.Empty(cs.Errs)
 	}
-	r = cli.Cli.Parser().ParseArgs([]string{})
+	r = cli.ParseArgs()
 	a.Error(r.Error)
 	a.True(r.HasErrors())
 	a.Empty(r.CmdStack)
@@ -382,7 +382,7 @@ func (x *testStartCmdExt) HandleParseEvent(event string, ctx *ParseContext) {
 func TestParseExtStartCmd(t *testing.T) {
 	a := assert.New(t)
 	ext := &testStartCmdExt{t: t}
-	r := cli.Cli.Parser().AddParseExt(EvtStartCmd, ext).ParseArgs([]string{"cli", "up", "a1"})
+	r := cli.Parser().AddParseExt(EvtStartCmd, ext).ParseArgs("cli", "up", "a1")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 2) && a.Len(ext.cmds, 2) {
 		a.Equal("test", ext.cmds[0])
 		a.Equal("up", ext.cmds[1])
@@ -422,7 +422,7 @@ func (x *testAssignOptExt) HandleParseEvent(event string, ctx *ParseContext) {
 func TestParseExtAssignOpt(t *testing.T) {
 	a := assert.New(t)
 	ext := &testAssignOptExt{t: t}
-	r := cli.Cli.Parser().AddParseExt(EvtAssignOpt, ext).ParseArgs([]string{"cli", "up", "--no-flaga", "a1"})
+	r := cli.Parser().AddParseExt(EvtAssignOpt, ext).ParseArgs("cli", "up", "--no-flaga", "a1")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 2) && a.Len(ext.assigns, 2) {
 		a.Equal(1, ext.assigns[0].at)
 		a.NotNil(ext.assigns[0].opt)
@@ -453,7 +453,7 @@ func (x *testAssignOptSkipValueExt) HandleParseEvent(event string, ctx *ParseCon
 func TestParseExtAssignOptSkipValue(t *testing.T) {
 	a := assert.New(t)
 	ext := &testAssignOptSkipValueExt{t: t}
-	r := cli.Cli.Parser().AddParseExt(EvtAssignOpt, ext).ParseArgs([]string{"cli", "up", "a1"})
+	r := cli.Parser().AddParseExt(EvtAssignOpt, ext).ParseArgs("cli", "up", "a1")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 2) {
 		cs := r.CmdStack[1]
 		a.NotContains(cs.Vars, "object")
@@ -479,7 +479,7 @@ func (x *testResolveOptExt) HandleParseEvent(event string, ctx *ParseContext) {
 func TestParseExtResolveOpt(t *testing.T) {
 	a := assert.New(t)
 	ext := &testResolveOptExt{t: t}
-	r := cli.Cli.Parser().AddParseExt(EvtResolveOpt, ext).ParseArgs([]string{"cli", "up", "--unknown1=1", "--unknown2", "a1"})
+	r := cli.Parser().AddParseExt(EvtResolveOpt, ext).ParseArgs("cli", "up", "--unknown1=1", "--unknown2", "a1")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 2) && a.Len(ext.r, 2) {
 		cs := r.CmdStack[1]
 		if a.Len(cs.Errs, 2) {
@@ -513,7 +513,7 @@ func (x *testResolveOptSkipExt) HandleParseEvent(event string, ctx *ParseContext
 func TestParseExtResolveOptSkip(t *testing.T) {
 	a := assert.New(t)
 	ext := &testResolveOptSkipExt{t: t}
-	r := cli.Cli.Parser().AddParseExt(EvtResolveOpt, ext).ParseArgs([]string{"cli", "up", "--unknown1=1", "a1"})
+	r := cli.Parser().AddParseExt(EvtResolveOpt, ext).ParseArgs("cli", "up", "--unknown1=1", "a1")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 2) {
 		cs := r.CmdStack[1]
 		a.Empty(cs.Errs)
@@ -536,10 +536,10 @@ func TestParseExtDone(t *testing.T) {
 	a := assert.New(t)
 	x1 := &testDoneExt{t: t}
 	x2 := &testDoneExt{t: t}
-	r := cli.Cli.Parser().
+	r := cli.Parser().
 		AddParseExt(EvtStartCmd, x1).
 		AddParseExt(EvtStartCmd, x2).
-		ParseArgs([]string{"cli", "up", "a1"})
+		ParseArgs("cli", "up", "a1")
 	if a.NoError(r.Error) && a.Len(r.CmdStack, 2) {
 		a.True(x1.touched)
 		a.False(x2.touched)
@@ -562,10 +562,10 @@ func TestParseExtAbort(t *testing.T) {
 	a := assert.New(t)
 	x1 := &testAbortExt{t: t}
 	x2 := &testAbortExt{t: t}
-	r := cli.Cli.Parser().
+	r := cli.Parser().
 		AddParseExt(EvtResolveOpt, x1).
 		AddParseExt(EvtResolveOpt, x2).
-		ParseArgs([]string{"cli", "--unknown", "up"})
+		ParseArgs("cli", "--unknown", "up")
 	if a.Error(r.Error) {
 		a.Equal("aborted: unknown", r.Error.Error())
 		a.True(x1.touched)
@@ -594,7 +594,7 @@ func (x *testExecExt) RegisterExt(parser *Parser) {
 func TestExecExt(t *testing.T) {
 	a := assert.New(t)
 	x := &testExecExt{t: t}
-	err := cli.Cli.Parser().Use(x).ParseArgs([]string{"cli", "up", "a1"}).Exec()
+	err := cli.Use(x).ParseArgs("cli", "up", "a1").Exec()
 	if a.NoError(err) {
 		a.NotNil(x.r)
 	}
@@ -618,10 +618,10 @@ func TestExecDoneExt(t *testing.T) {
 	a := assert.New(t)
 	x1 := &testExecDoneExt{t: t}
 	x2 := &testExecDoneExt{t: t}
-	err := cli.Cli.Parser().
+	err := cli.Parser().
 		AddExecExt(x1).
 		AddExecExt(x2).
-		ParseArgs([]string{"cli", "up", "a1"}).
+		ParseArgs("cli", "up", "a1").
 		Exec()
 	if a.Error(err) {
 		a.NotNil(x1.r)

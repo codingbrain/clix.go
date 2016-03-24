@@ -19,6 +19,18 @@ type testRender struct {
 	fwd HelpRender
 }
 
+func (r *testRender) RenderStart() {
+	if r.fwd != nil {
+		r.fwd.RenderStart()
+	}
+}
+
+func (r *testRender) RenderComplete() {
+	if r.fwd != nil {
+		r.fwd.RenderComplete()
+	}
+}
+
 func (r *testRender) RenderBanner(b *BannerInfo) {
 	r.banner = b
 	if r.fwd != nil {
@@ -112,9 +124,9 @@ func runParser(t *testing.T, cmdDef string, cmdArgs ...string) (*testRender, *ar
 	a := assert.New(t)
 	if cli, err := args.DecodeCliDefString(cmdDef); a.NoError(err) {
 		render := &testRender{fwd: &DefaultRender{}}
-		result := cli.Cli.Parser().
+		result := cli.
 			Use(NewExt().UseRender(render).NoExit()).
-			ParseArgs(cmdArgs)
+			ParseArgs(cmdArgs...)
 		err = result.Exec()
 		if a.Error(err) {
 			a.Equal(ErrorHelp, err)
@@ -188,7 +200,6 @@ func TestHelpNoDef(t *testing.T) {
 	render, _ := runParser(t, testCmdDef1, "test", "c2", "--unknown", "c2a1")
 	if a.NotNil(render) {
 		a.Nil(render.banner)
-		a.Nil(render.usage)
 		if a.Len(render.errs, 1) {
 			a.Regexp(regexp.MustCompile(`unknown option: unknown$`), render.errs[0].Msg)
 		}
@@ -200,10 +211,9 @@ func TestHelpOptNoVal(t *testing.T) {
 	render, _ := runParser(t, testCmdDef1, "test", "c3", "--c3o1", "-3")
 	if a.NotNil(render) {
 		a.Nil(render.banner)
-		a.Nil(render.usage)
 		if a.Len(render.errs, 2) {
-			a.Regexp(regexp.MustCompile(`expect value C3O1 after --c3o1$`), render.errs[0].Msg)
-			a.Regexp(regexp.MustCompile(`expect value 3 after -3$`), render.errs[1].Msg)
+			a.Regexp(regexp.MustCompile(`expect value after --c3o1$`), render.errs[0].Msg)
+			a.Regexp(regexp.MustCompile(`expect value after -3$`), render.errs[1].Msg)
 		}
 	}
 }
@@ -213,7 +223,6 @@ func TestHelpArgNoVal(t *testing.T) {
 	render, _ := runParser(t, testCmdDef1, "test", "c2")
 	if a.NotNil(render) {
 		a.Nil(render.banner)
-		a.Nil(render.usage)
 		if a.Len(render.errs, 1) {
 			a.Regexp(regexp.MustCompile(`expect argument C2A1$`), render.errs[0].Msg)
 		}
@@ -225,7 +234,6 @@ func TestHelpOptBadVal(t *testing.T) {
 	render, _ := runParser(t, testCmdDef1, "test", "c3", "--c3o1=abc", "-3", "C")
 	if a.NotNil(render) {
 		a.Nil(render.banner)
-		a.Nil(render.usage)
 		if a.Len(render.errs, 2) {
 			a.Regexp(regexp.MustCompile(`invalid value for --c3o1: abc$`), render.errs[0].Msg)
 			a.Regexp(regexp.MustCompile(`invalid value for -3: C$`), render.errs[1].Msg)
@@ -238,7 +246,6 @@ func TestHelpArgBadVal(t *testing.T) {
 	render, _ := runParser(t, testCmdDef1, "test", "c3", "ABC")
 	if a.NotNil(render) {
 		a.Nil(render.banner)
-		a.Nil(render.usage)
 		if a.Len(render.errs, 1) {
 			a.Regexp(regexp.MustCompile(`invalid value for argument C3A1: ABC$`), render.errs[0].Msg)
 		}
@@ -249,27 +256,27 @@ func TestCustomHelpOptions(t *testing.T) {
 	a := assert.New(t)
 	if cli, err := args.DecodeCliDefString(testCmdDef1); a.NoError(err) {
 		render := &testRender{fwd: &DefaultRender{}}
-		err = cli.Cli.Parser().
+		err = cli.
 			Use(NewExt().OptNames("sos", "!").UseRender(render).NoExit()).
-			ParseArgs([]string{"test", "--sos"}).Exec()
+			ParseArgs("test", "--sos").Exec()
 		if a.Error(err) {
 			a.Equal(ErrorHelp, err)
 		}
-		err = cli.Cli.Parser().
+		err = cli.
 			Use(NewExt().OptNames("sos", "!", "$").UseRender(render).NoExit()).
-			ParseArgs([]string{"test", "-!"}).Exec()
+			ParseArgs("test", "-!").Exec()
 		if a.Error(err) {
 			a.Equal(ErrorHelp, err)
 		}
-		err = cli.Cli.Parser().
+		err = cli.
 			Use(NewExt().OptNames("sos", "!", "$").UseRender(render).NoExit()).
-			ParseArgs([]string{"test", "-$"}).Exec()
+			ParseArgs("test", "-$").Exec()
 		if a.Error(err) {
 			a.Equal(ErrorHelp, err)
 		}
-		result := cli.Cli.Parser().
+		result := cli.
 			Use(NewExt().OptNames("sos", "!", "$").UseRender(render).NoExit()).
-			ParseArgs([]string{"test", "--help"})
+			ParseArgs("test", "--help")
 		if a.Error(result.Exec()) {
 			a.Equal(ErrorHelp, err)
 			a.NotEmpty(result.CmdStack[0].Errs)

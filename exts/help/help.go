@@ -8,6 +8,10 @@ import (
 	"github.com/codingbrain/clix.go/args"
 )
 
+const (
+	TagVar = "help-var"
+)
+
 var (
 	// DefaultLong defines the default long option for help
 	DefaultLong = "help"
@@ -44,6 +48,10 @@ type UsageInfo struct {
 
 // HelpRender defines the interface that a render to implement to show help
 type HelpRender interface {
+	// RenderStart indicates the start of render process
+	RenderStart()
+	// RenderComplete indicates the end of render process
+	RenderComplete()
 	// RenderBanner displays banner
 	RenderBanner(*BannerInfo)
 	// RenderUsage displays usage line
@@ -62,11 +70,11 @@ type HelpRender interface {
 // - EvtResoveOpt
 // - Execution
 type HelpExt struct {
-	Long     string
-	Alias    []string
-	Render   HelpRender
-	ExitCode int
-	AnyError bool
+	Long         string
+	Alias        []string
+	Render       HelpRender
+	HelpExitCode int
+	ErrExitCode  int
 
 	helpCmdAt int
 }
@@ -74,12 +82,12 @@ type HelpExt struct {
 // NewExt creates help extension
 func NewExt() *HelpExt {
 	return &HelpExt{
-		Long:      DefaultLong,
-		Alias:     DefaultAlias,
-		Render:    &DefaultRender{},
-		ExitCode:  2,
-		AnyError:  true,
-		helpCmdAt: -1,
+		Long:         DefaultLong,
+		Alias:        DefaultAlias,
+		Render:       &DefaultRender{},
+		HelpExitCode: 2,
+		ErrExitCode:  1,
+		helpCmdAt:    -1,
 	}
 }
 
@@ -99,33 +107,39 @@ func (x *HelpExt) UseRender(render HelpRender) *HelpExt {
 // NoExit prevents the extension invoke os.Exit(x.ExitCode)
 // and returns ErrorHelp in result only
 func (x *HelpExt) NoExit() *HelpExt {
-	x.ExitCode = -1
+	x.HelpExitCode = -1
+	x.ErrExitCode = -1
 	return x
 }
 
 // ExitWith specifies the exit code to use when exit after help displayed
-func (x *HelpExt) ExitWith(code int) *HelpExt {
-	x.ExitCode = code
+func (x *HelpExt) ExitWith(helpCode, errCode int) *HelpExt {
+	x.HelpExitCode = helpCode
+	x.ErrExitCode = errCode
 	return x
 }
 
 // ExecuteCmd implements execution extension
 func (x *HelpExt) ExecuteCmd(ctx *args.ExecContext) {
 	if err := ctx.Result.Error; err == ErrorHelp && x.helpCmdAt >= 0 {
+		x.RenderStart()
 		x.displayHelp(ctx.Result.CmdStack, x.helpCmdAt, true)
-		x.exit()
+		x.RenderComplete()
+		exit(x.HelpExitCode)
 		return
 	} else if err != nil {
-		if err != ErrorHelp && x.AnyError {
+		if err != ErrorHelp && x.ErrExitCode >= 0 {
+			x.RenderStart()
 			x.displayErrors([]*ErrInfo{&ErrInfo{Msg: err.Error()}})
-			x.exit()
+			x.RenderComplete()
+			exit(x.ErrExitCode)
 		}
 		return
 	}
 
+	x.RenderStart()
 	if ctx.Result.MissingCmd {
 		x.displayErrors([]*ErrInfo{&ErrInfo{Cmd: ctx.Result.UnparsedArgs[0]}})
-		x.displayHelp(ctx.Result.CmdStack, len(ctx.Result.CmdStack)-1, false)
 	} else {
 		errs := make([]*ErrInfo, 0, 0)
 		for _, pcmd := range ctx.Result.CmdStack {
@@ -138,8 +152,11 @@ func (x *HelpExt) ExecuteCmd(ctx *args.ExecContext) {
 		}
 		x.displayErrors(errs)
 	}
+	x.displayHelp(ctx.Result.CmdStack, len(ctx.Result.CmdStack)-1, false)
+	x.RenderComplete()
+
 	ctx.Done(ErrorHelp)
-	x.exit()
+	exit(x.HelpExitCode)
 }
 
 // HandleParseEvent implements parse extension
@@ -170,6 +187,20 @@ func (x *HelpExt) RegisterExt(parser *args.Parser) {
 	parser.AddParseExt(args.EvtResolveOpt, x)
 	parser.AddExecExt(x)
 	x.helpCmdAt = -1
+}
+
+// RenderStart self implements HelpRender
+func (x *HelpExt) RenderStart() {
+	if x.Render != nil {
+		x.Render.RenderStart()
+	}
+}
+
+// RenderComplete self implements HelpRender
+func (x *HelpExt) RenderComplete() {
+	if x.Render != nil {
+		x.Render.RenderComplete()
+	}
 }
 
 // RenderBanner self implements HelpRender
@@ -237,7 +268,7 @@ func (x *HelpExt) displayHelp(stack []*args.ParsedCmd, at int, banner bool) {
 		usage.Args = []string{"SUBCOMMAND"}
 	} else {
 		for _, arg := range pcmd.Cmd.Arguments {
-			name := strings.ToUpper(arg.ValueName())
+			name := ArgDisplayName(arg)
 			if !arg.Required {
 				name = "[" + name + "]"
 			}
@@ -274,25 +305,15 @@ func (x *HelpExt) displayErrors(errs []*ErrInfo) {
 				err.Msg = "unknown option: " + err.Var.Name
 			case args.VarErrNoVal:
 				if err.Var.Def.IsArg {
-					err.Msg = "expect argument " + strings.ToUpper(err.Var.Def.ValueName())
+					err.Msg = "expect argument " + ArgDisplayName(err.Var.Def)
 				} else {
-					err.Msg = "expect value " + strings.ToUpper(err.Var.Def.ValueName()) + " after "
-					if len(err.Var.Name) > 1 {
-						err.Msg += "--" + err.Var.Name
-					} else {
-						err.Msg += "-" + err.Var.Name
-					}
+					err.Msg = "expect value after " + OptName(err.Var.Name)
 				}
 			case args.VarErrBadVal:
 				if err.Var.Def.IsArg {
-					err.Msg = "invalid value for argument " + strings.ToUpper(err.Var.Def.ValueName())
+					err.Msg = "invalid value for argument " + ArgDisplayName(err.Var.Def)
 				} else {
-					err.Msg = "invalid value for "
-					if len(err.Var.Name) > 1 {
-						err.Msg += "--" + err.Var.Name
-					} else {
-						err.Msg += "-" + err.Var.Name
-					}
+					err.Msg = "invalid value for " + OptName(err.Var.Name)
 				}
 				if err.Var.Value != nil {
 					err.Msg += ": " + *err.Var.Value
@@ -305,8 +326,38 @@ func (x *HelpExt) displayErrors(errs []*ErrInfo) {
 	}
 }
 
-func (x *HelpExt) exit() {
-	if x.ExitCode >= 0 {
-		os.Exit(x.ExitCode)
+func OptName(name string) string {
+	if len(name) > 1 {
+		return "--" + name
+	}
+	return "-" + name
+}
+
+func OptVarName(opt *args.Option) string {
+	if v, exist := opt.TagString(TagVar); exist && v != "" {
+		return v
+	}
+	return strings.ToUpper(opt.Name)
+}
+
+func ArgDisplayName(arg *args.Option) string {
+	if v, exist := arg.TagString(TagVar); exist && v != "" {
+		return v
+	}
+	name := []string{arg.Name}
+	name = append(name, arg.Alias...)
+	return strings.ToUpper(strings.Join(name, "|"))
+}
+
+func OptionDisplayName(opt *args.Option) string {
+	if opt.IsArg {
+		return ArgDisplayName(opt)
+	}
+	return OptName(opt.Name)
+}
+
+func exit(code int) {
+	if code >= 0 {
+		os.Exit(code)
 	}
 }

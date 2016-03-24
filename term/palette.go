@@ -4,6 +4,7 @@ const (
 	StyleOK   = "ok"
 	StyleErr  = "err"
 	StyleWarn = "warn"
+	StyleAsk  = "ask"
 	StyleHi   = "hi"
 	StyleLo   = "lo"
 	StyleEm   = "em"
@@ -48,6 +49,7 @@ var (
 			"em":   AliasStyler("invert"),
 			"b":    AliasStyler("bold"),
 			"i":    AliasStyler("underline"),
+			"ask":  AliasStyler("hi"),
 		},
 	}
 )

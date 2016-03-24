@@ -60,9 +60,15 @@ func (r *twoColRender) render(printer *term.Printer) {
 			}
 		}
 		if example {
-			printer.Println("")
+			printer.Println()
 		}
 	}
+}
+
+func (r *DefaultRender) RenderStart() {
+}
+
+func (r *DefaultRender) RenderComplete() {
 }
 
 func (r *DefaultRender) RenderBanner(info *BannerInfo) {
@@ -79,7 +85,7 @@ func (r *DefaultRender) RenderUsage(info *UsageInfo) {
 	strs := append([]string{}, info.Opts...)
 	strs = append(strs, info.Args...)
 	strs = append(strs, info.Tail...)
-	printer.Print(" " + strings.Join(strs, " ")).Println("\n")
+	printer.Print(" " + strings.Join(strs, " ")).Println().Println()
 }
 
 func (r *DefaultRender) RenderCommands(cmds []*args.Command) {
@@ -94,13 +100,13 @@ func (r *DefaultRender) RenderCommands(cmds []*args.Command) {
 	printer := r.printer()
 	printer.Styles(term.StyleHi, term.StyleI).Print("Commands").Reset().Println(":")
 	cr.render(printer)
-	printer.Println("")
+	printer.Println()
 }
 
 func (r *DefaultRender) RenderArguments(opts []*args.Option) {
 	cr := &twoColRender{}
 	for _, opt := range opts {
-		cr.rows = append(cr.rows, &twoColRow{col: []string{opt.ValueName(), opt.Desc}})
+		cr.rows = append(cr.rows, &twoColRow{col: []string{ArgDisplayName(opt), opt.Desc}})
 		if opt.Example != "" {
 			cr.rows = append(cr.rows, &twoColRow{col: []string{"", opt.Example}})
 		}
@@ -108,14 +114,13 @@ func (r *DefaultRender) RenderArguments(opts []*args.Option) {
 	printer := r.printer()
 	printer.Styles(term.StyleHi, term.StyleI).Print("Arguments").Reset().Println(":")
 	cr.render(printer)
-	printer.Println("")
+	printer.Println()
 }
 
 func (r *DefaultRender) RenderOptions(opts []*args.Option) {
 	cr := &twoColRender{}
 	for _, opt := range opts {
-		short := make([]string, 0)
-		long := make([]string, 0)
+		var short, long []string
 		for _, a := range opt.Alias {
 			if len(a) == 1 {
 				short = append(short, "-"+a)
@@ -128,7 +133,7 @@ func (r *DefaultRender) RenderOptions(opts []*args.Option) {
 			short = append(short, "-"+opt.Name)
 			row.col[0] = strings.Join(short, "|")
 			if opt.ExpectValue() {
-				row.col[0] += " " + strings.ToUpper(opt.ValueName())
+				row.col[0] += " " + OptVarName(opt)
 			}
 		} else {
 			long = append(long, "--"+opt.Name)
@@ -137,7 +142,7 @@ func (r *DefaultRender) RenderOptions(opts []*args.Option) {
 			}
 			row.col[0] += strings.Join(long, "|")
 			if opt.ExpectValue() {
-				row.col[0] += "=" + strings.ToUpper(opt.ValueName())
+				row.col[0] += "=" + OptVarName(opt)
 			}
 		}
 		row.col[1] = opt.Desc
@@ -149,7 +154,7 @@ func (r *DefaultRender) RenderOptions(opts []*args.Option) {
 	printer := r.printer()
 	printer.Styles(term.StyleHi, term.StyleI).Print("Options").Reset().Println(":")
 	cr.render(printer)
-	printer.Println("")
+	printer.Println()
 }
 
 func (r *DefaultRender) RenderErrors(errs []*ErrInfo) {

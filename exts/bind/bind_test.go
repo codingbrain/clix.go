@@ -93,9 +93,9 @@ type testBind1 struct {
 func TestStructBind(t *testing.T) {
 	a := assert.New(t)
 	s := &testBind1{}
-	err := cli.Cli.Parser().
+	err := cli.
 		Use(NewExt().Bind(s)).
-		ParseArgs([]string{"test", "a1", "a2", "a3"}).
+		ParseArgs("test", "a1", "a2", "a3").
 		Exec()
 	if a.NoError(err) {
 		a.Equal(true, s.Bool_1)
@@ -130,9 +130,9 @@ type testBind3 struct {
 func TestStructBindPtr(t *testing.T) {
 	a := assert.New(t)
 	s := &testBind2{}
-	err := cli.Cli.Parser().
+	err := cli.
 		Use(NewExt().Bind(s)).
-		ParseArgs([]string{"test"}).
+		ParseArgs("test").
 		Exec()
 	if a.NoError(err) {
 		if a.NotNil(s.Str2) {
@@ -145,9 +145,9 @@ func TestStructBindPtr(t *testing.T) {
 	}
 
 	s1 := &testBind3{}
-	err = cli.Cli.Parser().
+	err = cli.
 		Use(NewExt().Bind(s1)).
-		ParseArgs([]string{"test"}).
+		ParseArgs("test").
 		Exec()
 	if a.NoError(err) {
 		a.NotEmpty(s1.List1)
@@ -163,9 +163,9 @@ type testBindBytes struct {
 func TestStructBindBytes(t *testing.T) {
 	a := assert.New(t)
 	s := &testBindBytes{}
-	err := cli.Cli.Parser().
+	err := cli.
 		Use(NewExt().Bind(s)).
-		ParseArgs([]string{"test"}).
+		ParseArgs("test").
 		Exec()
 	if a.NoError(err) {
 		if a.NotNil(s.Str2) {
@@ -191,9 +191,9 @@ func TestBindSubCmd(t *testing.T) {
     `)
 	if a.NoError(err) {
 		s := &testBindSubCmd{}
-		err = cli.Cli.Parser().
+		err = cli.
 			Use(NewExt().Bind(s, "cmd")).
-			ParseArgs([]string{"test", "cmd", "--opt=ok"}).
+			ParseArgs("test", "cmd", "--opt=ok").
 			Exec()
 		if a.NoError(err) {
 			a.Equal("ok", s.Opt)
@@ -224,9 +224,9 @@ func TestBindExec(t *testing.T) {
     `)
 	if a.NoError(err) {
 		s := &testBindExec{}
-		err = cli.Cli.Parser().
+		err = cli.
 			Use(NewExt().Bind(s)).
-			ParseArgs([]string{"test", "--opt=opt", "a1", "a2"}).
+			ParseArgs("test", "--opt=opt", "a1", "a2").
 			Exec()
 		if a.Error(err) {
 			a.Equal("opt", s.val)

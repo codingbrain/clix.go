@@ -19,7 +19,6 @@ type Option struct {
 	Required bool                   `yaml:"required,omitempty"`
 	Default  interface{}            `yaml:"default,omitempty"`
 	List     bool                   `yaml:"list,omitempty"`
-	Var      string                 `yaml:"var,omitempty"`
 	Tags     map[string]interface{} `yaml:"tags,omitempty"`
 
 	IsArg     bool         `yaml:"-"`
@@ -110,16 +109,8 @@ func (opt *Option) ParseStrVal(val string) (interface{}, error) {
 func (opt *Option) DefaultAsString() string {
 	if opt.Default == nil || opt.List || opt.ValueKind == reflect.Map {
 		return ""
-	} else {
-		return fmt.Sprintf("%v", opt.Default)
 	}
-}
-
-func (opt *Option) ValueName() string {
-	if opt.Var != "" {
-		return opt.Var
-	}
-	return opt.Name
+	return fmt.Sprintf("%v", opt.Default)
 }
 
 func (opt *Option) ExpectValue() bool {
@@ -288,11 +279,11 @@ func (opt *Option) parseDefaultVal() (interface{}, error) {
 	}
 	rv := reflect.ValueOf(opt.Default)
 	if kind := rv.Kind(); scalarKind(kind) {
-		if parsedVal, err := parseNotSlice(opt.ValueKind, opt.Default); err != nil {
+		parsedVal, err := parseNotSlice(opt.ValueKind, opt.Default)
+		if err != nil {
 			return nil, err
-		} else {
-			return []interface{}{parsedVal}, nil
 		}
+		return []interface{}{parsedVal}, nil
 	} else if kind == reflect.Array || kind == reflect.Slice {
 		list := make([]interface{}, rv.Len())
 		for i := 0; i < rv.Len(); i++ {
@@ -300,11 +291,11 @@ func (opt *Option) parseDefaultVal() (interface{}, error) {
 			if !src.CanInterface() {
 				return nil, errors.New(errMsgInvalidType + src.Kind().String())
 			}
-			if parsedVal, err := parseNotSlice(opt.ValueKind, src.Interface()); err != nil {
+			parsedVal, err := parseNotSlice(opt.ValueKind, src.Interface())
+			if err != nil {
 				return nil, err
-			} else {
-				list[i] = parsedVal
 			}
+			list[i] = parsedVal
 		}
 		return list, nil
 	} else {
@@ -356,9 +347,8 @@ func indexOpt(cmdPath string, optMap, map1 map[string]*Option, opt *Option) erro
 		}
 		if exists {
 			return opt.defError(cmdPath, errMsgDupName)
-		} else {
-			optMap[name] = opt
 		}
+		optMap[name] = opt
 	}
 	return nil
 }
@@ -371,9 +361,8 @@ func indexCmd(cmdPath string, cmdMap map[string]*Command, cmd *Command) error {
 		}
 		if _, exists := cmdMap[name]; exists {
 			return &CmdDefError{cmdPath + "/" + cmd.Name, errMsgDupName}
-		} else {
-			cmdMap[name] = cmd
 		}
+		cmdMap[name] = cmd
 	}
 	return nil
 }

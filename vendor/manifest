@@ -9,12 +9,6 @@
 			"path": "/spew"
 		},
 		{
-			"importpath": "github.com/kless/term",
-			"repository": "https://github.com/kless/term",
-			"revision": "c8064aa880de646c634b193608ec79a41c823951",
-			"branch": "master"
-		},
-		{
 			"importpath": "github.com/pmezard/go-difflib/difflib",
 			"repository": "https://github.com/pmezard/go-difflib",
 			"revision": "792786c7400a136282c1664665ae0a8db921c6c2",
@@ -29,11 +23,11 @@
 			"path": "/assert"
 		},
 		{
-			"importpath": "golang.org/x/sys/unix",
-			"repository": "https://go.googlesource.com/sys",
-			"revision": "23999e87b4c5ef3f4dfe760c10dd2578e0f65ebb",
+			"importpath": "golang.org/x/crypto/ssh/terminal",
+			"repository": "https://go.googlesource.com/crypto",
+			"revision": "c197bcf24cde29d3f73c7b4ac6fd41f4384e8af6",
 			"branch": "master",
-			"path": "/unix"
+			"path": "/ssh/terminal"
 		},
 		{
 			"importpath": "gopkg.in/yaml.v2",

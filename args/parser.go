@@ -172,6 +172,10 @@ func (pcmd *ParsedCmd) assignOption(opt *Option, val string, valNot bool) (parse
 	return
 }
 
+func (pcmd *ParsedCmd) Assign(opt *Option, val string) (interface{}, error) {
+	return pcmd.assignOption(opt, val, false)
+}
+
 // Parser creates a parser with current command as root command
 func (cmd *Command) Parser() *Parser {
 	return &Parser{
@@ -389,7 +393,7 @@ func (p *Parser) parseEnd() error {
 }
 
 // ParseArgs parses a slice of arguments including args[0]
-func (p *Parser) ParseArgs(args []string) *ParseResult {
+func (p *Parser) ParseArgs(args ...string) *ParseResult {
 	for _, arg := range args {
 		p.parseArg(arg)
 	}
@@ -399,12 +403,14 @@ func (p *Parser) ParseArgs(args []string) *ParseResult {
 
 // Parse parses args from os.Args
 func (p *Parser) Parse() *ParseResult {
-	return p.ParseArgs(os.Args)
+	return p.ParseArgs(os.Args...)
 }
 
 // Use registers an extension to current parser
-func (p *Parser) Use(extReg ExtRegistrar) *Parser {
-	extReg.RegisterExt(p)
+func (p *Parser) Use(extRegs ...ExtRegistrar) *Parser {
+	for _, ext := range extRegs {
+		ext.RegisterExt(p)
+	}
 	return p
 }
 

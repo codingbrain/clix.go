@@ -9,20 +9,27 @@ type Printer struct {
 	Out     io.Writer
 	Palette *Palette
 
-	styles []string
+	styles [][]string
 }
 
 func NewPrinter(out io.Writer) *Printer {
-	return &Printer{Out: out}
+	return &Printer{Out: out, Palette: &DefaultPalette}
 }
 
 func (p *Printer) Styles(names ...string) *Printer {
-	p.styles = append(p.styles, names...)
+	p.styles = append(p.styles, names)
+	return p
+}
+
+func (p *Printer) Pop() *Printer {
+	if len(p.styles) > 0 {
+		p.styles = p.styles[0 : len(p.styles)-1]
+	}
 	return p
 }
 
 func (p *Printer) Reset() *Printer {
-	p.styles = []string{}
+	p.styles = [][]string{}
 	return p
 }
 
@@ -50,6 +57,9 @@ func (p *Printer) Write(raw []byte) (int, error) {
 	if pal == nil {
 		pal = &DefaultPalette
 	}
-	str := ResetStyler()(pal, pal.Apply(string(raw), p.styles...))
-	return p.Out.Write([]byte(str))
+	str := string(raw)
+	for _, styles := range p.styles {
+		str = pal.Apply(str, styles...)
+	}
+	return p.Out.Write([]byte(ResetStyler()(pal, str)))
 }

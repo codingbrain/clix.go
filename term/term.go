@@ -1,17 +1,18 @@
 package term
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 
-	kt "github.com/kless/term"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 type Terminal struct {
-	I     io.Reader
-	O     io.Writer
+	In    io.Reader
+	Out   io.Writer
 	ANSI  bool
 	Color bool
 
@@ -22,10 +23,12 @@ type Terminal struct {
 
 var (
 	Std = New(os.Stderr, os.Stdin)
+
+	ErrorInputUnavail = errors.New("input not available")
 )
 
 func IsTTY(fd uintptr) bool {
-	return kt.IsTerminal(int(fd))
+	return terminal.IsTerminal(int(fd))
 }
 
 func Print(a ...interface{}) *Terminal {
@@ -93,22 +96,24 @@ func OK() *Terminal {
 }
 
 func New(out, in *os.File) *Terminal {
-	t := &Terminal{I: in, O: out, in: in, out: out}
-	if out != nil {
-		t.outTTY = IsTTY(out.Fd())
-		t.ANSI = kt.SupportANSI()
-		t.Color = t.ANSI
-	} else {
-		t.O = ioutil.Discard
+	t := &Terminal{In: in, Out: out, in: in, out: out}
+	if out == nil {
+		t.Out = ioutil.Discard
+	} else if t.outTTY = IsTTY(out.Fd()); t.outTTY {
+		termType := os.Getenv("TERM")
+		if termType != "" && termType != "dumb" && termType != "cons25" {
+			t.ANSI = true
+			t.Color = true
+		}
 	}
 	if in != nil {
-		t.inTTY = kt.IsTerminal(int(in.Fd()))
+		t.inTTY = IsTTY(in.Fd())
 	}
 	return t
 }
 
 func (t *Terminal) HasInput() bool {
-	return t.I != nil
+	return t.In != nil
 }
 
 func (t *Terminal) IsInTTY() bool {
@@ -119,15 +124,48 @@ func (t *Terminal) IsTTY() bool {
 	return t.outTTY
 }
 
+func (t *Terminal) Read(p []byte) (int, error) {
+	if t.In != nil {
+		return t.In.Read(p)
+	}
+	return 0, io.EOF
+}
+
 func (t *Terminal) Write(p []byte) (int, error) {
-	if t.O == nil {
+	if t.Out == nil {
 		return 0, nil
 	}
 	if !t.Color {
 		t.escStrip.Write(p)
-		return t.O.Write(t.escStrip.Shift())
+		defer t.escStrip.Reset()
+		return t.Out.Write(t.escStrip.Bytes())
 	} else {
-		return t.O.Write(p)
+		return t.Out.Write(p)
+	}
+}
+
+func (t *Terminal) Input() (*Input, error) {
+	if t.in != nil && t.inTTY {
+		return NewInput(t, t.in.Fd())
+	}
+	return nil, ErrorInputUnavail
+}
+
+func (t *Terminal) ReadLine(prompt string) (string, error) {
+	if input, err := NewInput(t, t.in.Fd()); err != nil {
+		return "", err
+	} else {
+		defer input.Close()
+		return input.Prompt(prompt).ReadLine()
+	}
+}
+
+func (t *Terminal) ReadPassword(prompt string) (string, error) {
+	if input, err := NewInput(t, t.in.Fd()); err != nil {
+		return "", err
+	} else {
+		defer input.Close()
+		return input.ReadPassword(prompt)
 	}
 }
 
