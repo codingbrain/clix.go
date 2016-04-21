@@ -45,6 +45,7 @@ type ParseResult struct {
 	CmdStack     []*ParsedCmd
 	UnparsedArgs []string
 	MissingCmd   bool
+	ExpectCmd    bool
 	Error        error
 
 	exts []ExecExt
@@ -388,6 +389,9 @@ func (p *Parser) parseEnd() error {
 	}
 	if p.state == stateCmd || p.state == stateEnd {
 		p.currCmd.verifyRequiredArgs()
+	}
+	if p.currCmd.hasSubCommands() {
+		p.result.ExpectCmd = true
 	}
 	return p.result.Error
 }

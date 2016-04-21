@@ -73,7 +73,7 @@ func (r *DefaultRender) RenderComplete() {
 
 func (r *DefaultRender) RenderBanner(info *BannerInfo) {
 	for _, line := range info.Banner {
-		r.printer().Println(line)
+		r.printer().Println(line).Println()
 	}
 }
 
@@ -145,7 +145,11 @@ func (r *DefaultRender) RenderOptions(opts []*args.Option) {
 				row.col[0] += "=" + OptVarName(opt)
 			}
 		}
-		row.col[1] = opt.Desc
+		if opt.Required {
+			row.col[1] = "[Required] " + opt.Desc
+		} else {
+			row.col[1] = opt.Desc
+		}
 		cr.rows = append(cr.rows, row)
 		if opt.Example != "" {
 			cr.rows = append(cr.rows, &twoColRow{col: []string{"", opt.Example}})

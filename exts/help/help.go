@@ -121,13 +121,15 @@ func (x *HelpExt) ExitWith(helpCode, errCode int) *HelpExt {
 
 // ExecuteCmd implements execution extension
 func (x *HelpExt) ExecuteCmd(ctx *args.ExecContext) {
-	if err := ctx.Result.Error; err == ErrorHelp && x.helpCmdAt >= 0 {
+	err := ctx.Result.Error
+	if err == ErrorHelp && x.helpCmdAt >= 0 {
 		x.RenderStart()
 		x.displayHelp(ctx.Result.CmdStack, x.helpCmdAt, true)
 		x.RenderComplete()
 		exit(x.HelpExitCode)
 		return
-	} else if err != nil {
+	}
+	if err != nil {
 		if err != ErrorHelp && x.ErrExitCode >= 0 {
 			x.RenderStart()
 			x.displayErrors([]*ErrInfo{&ErrInfo{Msg: err.Error()}})
@@ -140,7 +142,7 @@ func (x *HelpExt) ExecuteCmd(ctx *args.ExecContext) {
 	x.RenderStart()
 	if ctx.Result.MissingCmd {
 		x.displayErrors([]*ErrInfo{&ErrInfo{Cmd: ctx.Result.UnparsedArgs[0]}})
-	} else {
+	} else if !ctx.Result.ExpectCmd {
 		errs := make([]*ErrInfo, 0, 0)
 		for _, pcmd := range ctx.Result.CmdStack {
 			for _, e := range pcmd.Errs {
@@ -152,7 +154,7 @@ func (x *HelpExt) ExecuteCmd(ctx *args.ExecContext) {
 		}
 		x.displayErrors(errs)
 	}
-	x.displayHelp(ctx.Result.CmdStack, len(ctx.Result.CmdStack)-1, false)
+	x.displayHelp(ctx.Result.CmdStack, len(ctx.Result.CmdStack)-1, ctx.Result.ExpectCmd)
 	x.RenderComplete()
 
 	ctx.Done(ErrorHelp)
@@ -305,9 +307,9 @@ func (x *HelpExt) displayErrors(errs []*ErrInfo) {
 				err.Msg = "unknown option: " + err.Var.Name
 			case args.VarErrNoVal:
 				if err.Var.Def.IsArg {
-					err.Msg = "expect argument " + ArgDisplayName(err.Var.Def)
+					err.Msg = "require argument " + ArgDisplayName(err.Var.Def)
 				} else {
-					err.Msg = "expect value after " + OptName(err.Var.Name)
+					err.Msg = "require option " + OptName(err.Var.Name)
 				}
 			case args.VarErrBadVal:
 				if err.Var.Def.IsArg {

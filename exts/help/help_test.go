@@ -185,7 +185,7 @@ func TestHelpMissingCmd(t *testing.T) {
 	a := assert.New(t)
 	render, _ := runParser(t, testCmdDef1, "test", "unknown")
 	if a.NotNil(render) {
-		a.Nil(render.banner)
+		a.NotNil(render.banner)
 		if a.NotNil(render.usage) {
 			a.Equal([]string{"test"}, render.usage.Cmds)
 		}
@@ -212,8 +212,8 @@ func TestHelpOptNoVal(t *testing.T) {
 	if a.NotNil(render) {
 		a.Nil(render.banner)
 		if a.Len(render.errs, 2) {
-			a.Regexp(regexp.MustCompile(`expect value after --c3o1$`), render.errs[0].Msg)
-			a.Regexp(regexp.MustCompile(`expect value after -3$`), render.errs[1].Msg)
+			a.Regexp(regexp.MustCompile(`require option --c3o1$`), render.errs[0].Msg)
+			a.Regexp(regexp.MustCompile(`require option -3$`), render.errs[1].Msg)
 		}
 	}
 }
@@ -224,7 +224,7 @@ func TestHelpArgNoVal(t *testing.T) {
 	if a.NotNil(render) {
 		a.Nil(render.banner)
 		if a.Len(render.errs, 1) {
-			a.Regexp(regexp.MustCompile(`expect argument C2A1$`), render.errs[0].Msg)
+			a.Regexp(regexp.MustCompile(`require argument C2A1$`), render.errs[0].Msg)
 		}
 	}
 }
