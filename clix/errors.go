@@ -16,7 +16,11 @@ type AggregatedError struct {
 
 func (e *AggregatedError) AddErr(err error) error {
 	if err != nil {
-		e.Errors = append(e.Errors, err)
+		if aggregatedErrs, ok := err.(*AggregatedError); ok {
+			e.Errors = append(e.Errors, aggregatedErrs.Errors...)
+		} else {
+			e.Errors = append(e.Errors, err)
+		}
 	}
 	return err
 }
