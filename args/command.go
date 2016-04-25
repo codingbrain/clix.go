@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/codingbrain/clix.go/clix"
+	merr "github.com/easeway/langx.go/errors"
 )
 
 type Option struct {
@@ -423,7 +423,7 @@ func (cmd *Command) normalizeAsCommand(cmdPath string) error {
 	cmd.ArgMap = make(map[string]*Option)
 	cmd.CmdMap = make(map[string]*Command)
 	cmd.DefVars = make(map[string]interface{})
-	errs := &clix.AggregatedError{}
+	errs := &merr.AggregatedError{}
 	for _, opt := range cmd.Options {
 		if errs.Add(opt.normalizeAsOption(cmdPath)) {
 			continue
