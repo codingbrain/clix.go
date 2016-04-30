@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/codingbrain/clix.go/args"
+	"github.com/codingbrain/clix.go/flag"
 )
 
 var (
@@ -27,7 +27,7 @@ type binding struct {
 	execCmd execCmdFn
 }
 
-type modelUpdateFn func(opt *args.Option, name string, value interface{})
+type modelUpdateFn func(opt *flag.Option, name string, value interface{})
 type execCmdFn func([]string) error
 type fieldUpdateFn func(value interface{})
 type valueUpdateFn func(v *reflect.Value, value interface{})
@@ -47,8 +47,8 @@ func (x *BindExt) Bind(model interface{}, cmds ...string) *BindExt {
 	return x
 }
 
-func (x *BindExt) HandleParseEvent(event string, ctx *args.ParseContext) {
-	if event != args.EvtAssigned {
+func (x *BindExt) HandleParseEvent(event string, ctx *flag.ParseContext) {
+	if event != flag.EvtAssigned {
 		return
 	}
 	if b, exists := x.b[keyFromStack(ctx.CmdStack())]; exists {
@@ -56,7 +56,7 @@ func (x *BindExt) HandleParseEvent(event string, ctx *args.ParseContext) {
 	}
 }
 
-func (x *BindExt) ExecuteCmd(ctx *args.ExecContext) {
+func (x *BindExt) ExecuteCmd(ctx *flag.ExecContext) {
 	b, exists := x.b[keyFromStack(ctx.Result.CmdStack)]
 	if exists && b.execCmd != nil && !ctx.HasErrors() {
 		if err := b.execCmd(ctx.Cmd().Args); err != nil {
@@ -67,8 +67,8 @@ func (x *BindExt) ExecuteCmd(ctx *args.ExecContext) {
 	}
 }
 
-func (x *BindExt) RegisterExt(parser *args.Parser) {
-	parser.AddParseExt(args.EvtAssigned, x)
+func (x *BindExt) RegisterExt(parser *flag.Parser) {
+	parser.AddParseExt(flag.EvtAssigned, x)
 	parser.AddExecExt(x)
 }
 
@@ -76,7 +76,7 @@ func cmdsToKey(cmds []string) string {
 	return strings.Join(cmds, " ")
 }
 
-func keyFromStack(cmdStack []*args.ParsedCmd) string {
+func keyFromStack(cmdStack []*flag.ParsedCmd) string {
 	key := ""
 	for i, pcmd := range cmdStack {
 		// skip root command
@@ -314,7 +314,7 @@ func structUpdateFn(model *reflect.Value) modelUpdateFn {
 			mapper[key] = fieldUpdateFactory(&v)
 		}
 	}
-	return func(opt *args.Option, name string, value interface{}) {
+	return func(opt *flag.Option, name string, value interface{}) {
 		if opt == nil {
 			return
 		}

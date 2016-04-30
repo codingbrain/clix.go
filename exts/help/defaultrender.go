@@ -4,7 +4,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/codingbrain/clix.go/args"
+	"github.com/codingbrain/clix.go/flag"
 	"github.com/codingbrain/clix.go/term"
 )
 
@@ -88,7 +88,7 @@ func (r *DefaultRender) RenderUsage(info *UsageInfo) {
 	printer.Print(" " + strings.Join(strs, " ")).Println().Println()
 }
 
-func (r *DefaultRender) RenderCommands(cmds []*args.Command) {
+func (r *DefaultRender) RenderCommands(cmds []*flag.Command) {
 	cr := &twoColRender{}
 	for _, cmd := range cmds {
 		name := strings.Join(append([]string{cmd.Name}, cmd.Alias...), "|")
@@ -103,7 +103,7 @@ func (r *DefaultRender) RenderCommands(cmds []*args.Command) {
 	printer.Println()
 }
 
-func (r *DefaultRender) RenderArguments(opts []*args.Option) {
+func (r *DefaultRender) RenderArguments(opts []*flag.Option) {
 	cr := &twoColRender{}
 	for _, opt := range opts {
 		cr.rows = append(cr.rows, &twoColRow{col: []string{ArgDisplayName(opt), opt.Desc}})
@@ -117,7 +117,7 @@ func (r *DefaultRender) RenderArguments(opts []*args.Option) {
 	printer.Println()
 }
 
-func (r *DefaultRender) RenderOptions(opts []*args.Option) {
+func (r *DefaultRender) RenderOptions(opts []*flag.Option) {
 	cr := &twoColRender{}
 	for _, opt := range opts {
 		var short, long []string

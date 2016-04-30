@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/codingbrain/clix.go/args"
+	"github.com/codingbrain/clix.go/flag"
 )
 
 const (
@@ -35,7 +35,7 @@ type ErrInfo struct {
 	// present with cmd string which is invalid
 	Cmd string
 	// present indicate a parsing error
-	Var *args.VarError
+	Var *flag.VarError
 }
 
 // UsageInfo defines the information to be displayed in usage line
@@ -57,11 +57,11 @@ type HelpRender interface {
 	// RenderUsage displays usage line
 	RenderUsage(*UsageInfo)
 	// RenderCommands displays subcommands and details
-	RenderCommands([]*args.Command)
+	RenderCommands([]*flag.Command)
 	// RenderArguments displays arguments and details
-	RenderArguments([]*args.Option)
+	RenderArguments([]*flag.Option)
 	// RenderOptions displays options and details
-	RenderOptions([]*args.Option)
+	RenderOptions([]*flag.Option)
 	// RenderErrors displays error messages
 	RenderErrors([]*ErrInfo)
 }
@@ -120,7 +120,7 @@ func (x *HelpExt) ExitWith(helpCode, errCode int) *HelpExt {
 }
 
 // ExecuteCmd implements execution extension
-func (x *HelpExt) ExecuteCmd(ctx *args.ExecContext) {
+func (x *HelpExt) ExecuteCmd(ctx *flag.ExecContext) {
 	err := ctx.Result.Error
 	if err == ErrorHelp && x.helpCmdAt >= 0 {
 		x.RenderStart()
@@ -162,8 +162,8 @@ func (x *HelpExt) ExecuteCmd(ctx *args.ExecContext) {
 }
 
 // HandleParseEvent implements parse extension
-func (x *HelpExt) HandleParseEvent(event string, ctx *args.ParseContext) {
-	if event != args.EvtResolveOpt || x.helpCmdAt >= 0 || ctx.Name == "" {
+func (x *HelpExt) HandleParseEvent(event string, ctx *flag.ParseContext) {
+	if event != flag.EvtResolveOpt || x.helpCmdAt >= 0 || ctx.Name == "" {
 		return
 	}
 	if ctx.Name != x.Long {
@@ -185,8 +185,8 @@ func (x *HelpExt) HandleParseEvent(event string, ctx *args.ParseContext) {
 }
 
 // RegisterExt implements ExtRegistrar
-func (x *HelpExt) RegisterExt(parser *args.Parser) {
-	parser.AddParseExt(args.EvtResolveOpt, x)
+func (x *HelpExt) RegisterExt(parser *flag.Parser) {
+	parser.AddParseExt(flag.EvtResolveOpt, x)
 	parser.AddExecExt(x)
 	x.helpCmdAt = -1
 }
@@ -220,21 +220,21 @@ func (x *HelpExt) RenderUsage(info *UsageInfo) {
 }
 
 // RenderCommands self implements HelpRender
-func (x *HelpExt) RenderCommands(cmds []*args.Command) {
+func (x *HelpExt) RenderCommands(cmds []*flag.Command) {
 	if x.Render != nil {
 		x.Render.RenderCommands(cmds)
 	}
 }
 
 // RenderArguments self implements HelpRender
-func (x *HelpExt) RenderArguments(opts []*args.Option) {
+func (x *HelpExt) RenderArguments(opts []*flag.Option) {
 	if x.Render != nil {
 		x.Render.RenderArguments(opts)
 	}
 }
 
 // RenderOptions self implements HelpRender
-func (x *HelpExt) RenderOptions(opts []*args.Option) {
+func (x *HelpExt) RenderOptions(opts []*flag.Option) {
 	if x.Render != nil {
 		x.Render.RenderOptions(opts)
 	}
@@ -247,7 +247,7 @@ func (x *HelpExt) RenderErrors(errs []*ErrInfo) {
 	}
 }
 
-func (x *HelpExt) displayHelp(stack []*args.ParsedCmd, at int, banner bool) {
+func (x *HelpExt) displayHelp(stack []*flag.ParsedCmd, at int, banner bool) {
 	if banner {
 		pcmd := stack[0]
 		if pcmd.Cmd.Desc != "" {
@@ -287,7 +287,7 @@ func (x *HelpExt) displayHelp(stack []*args.ParsedCmd, at int, banner bool) {
 		x.RenderArguments(pcmd.Cmd.Arguments)
 	}
 
-	var opts []*args.Option
+	var opts []*flag.Option
 	for i := 0; i <= at; i++ {
 		pcmd := stack[i]
 		opts = append(opts, pcmd.Cmd.Options...)
@@ -303,15 +303,15 @@ func (x *HelpExt) displayErrors(errs []*ErrInfo) {
 			err.Msg = "unknown command: " + err.Cmd
 		} else if err.Var != nil {
 			switch err.Var.ErrType {
-			case args.VarErrNoDef:
+			case flag.VarErrNoDef:
 				err.Msg = "unknown option: " + err.Var.Name
-			case args.VarErrNoVal:
+			case flag.VarErrNoVal:
 				if err.Var.Def.IsArg {
 					err.Msg = "require argument " + ArgDisplayName(err.Var.Def)
 				} else {
 					err.Msg = "require option " + OptName(err.Var.Name)
 				}
-			case args.VarErrBadVal:
+			case flag.VarErrBadVal:
 				if err.Var.Def.IsArg {
 					err.Msg = "invalid value for argument " + ArgDisplayName(err.Var.Def)
 				} else {
@@ -335,14 +335,14 @@ func OptName(name string) string {
 	return "-" + name
 }
 
-func OptVarName(opt *args.Option) string {
+func OptVarName(opt *flag.Option) string {
 	if v, exist := opt.TagString(TagVar); exist && v != "" {
 		return v
 	}
 	return strings.ToUpper(opt.Name)
 }
 
-func ArgDisplayName(arg *args.Option) string {
+func ArgDisplayName(arg *flag.Option) string {
 	if v, exist := arg.TagString(TagVar); exist && v != "" {
 		return v
 	}
@@ -351,7 +351,7 @@ func ArgDisplayName(arg *args.Option) string {
 	return strings.ToUpper(strings.Join(name, "|"))
 }
 
-func OptionDisplayName(opt *args.Option) string {
+func OptionDisplayName(opt *flag.Option) string {
 	if opt.IsArg {
 		return ArgDisplayName(opt)
 	}

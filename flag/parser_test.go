@@ -1,4 +1,4 @@
-package args
+package flag
 
 import (
 	"errors"
@@ -10,11 +10,11 @@ import (
 var cli = loadCli()
 
 func loadCli() *CliDef {
-	cli, err := DecodeCliDefFile("test.yml")
+	def, err := DecodeCliDefFile("test.yml")
 	if err != nil {
 		panic(err)
 	}
-	return cli
+	return def
 }
 
 func TestShortFlags(t *testing.T) {

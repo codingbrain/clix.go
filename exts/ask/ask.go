@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/codingbrain/clix.go/args"
 	"github.com/codingbrain/clix.go/exts/help"
+	"github.com/codingbrain/clix.go/flag"
 	"github.com/codingbrain/clix.go/term"
 )
 
@@ -29,7 +29,7 @@ func (x *AskExt) UseTerminal(t *term.Terminal) *AskExt {
 }
 
 // ExecuteCmd implements execution extension
-func (x *AskExt) ExecuteCmd(ctx *args.ExecContext) {
+func (x *AskExt) ExecuteCmd(ctx *flag.ExecContext) {
 	t := x.Terminal
 	if t == nil {
 		t = term.Std
@@ -41,13 +41,13 @@ func (x *AskExt) ExecuteCmd(ctx *args.ExecContext) {
 		if len(pcmd.Errs) == 0 {
 			continue
 		}
-		errs := make([]*args.VarError, 0, len(pcmd.Errs))
+		errs := make([]*flag.VarError, 0, len(pcmd.Errs))
 		for _, err := range pcmd.Errs {
 			var msg string
 			switch err.ErrType {
-			case args.VarErrNoVal:
+			case flag.VarErrNoVal:
 				msg = "expects a value"
-			case args.VarErrBadVal:
+			case flag.VarErrBadVal:
 				msg = "has an invalid value: " + *err.Value
 			default:
 				errs = append(errs, err)
@@ -96,6 +96,6 @@ func (x *AskExt) ExecuteCmd(ctx *args.ExecContext) {
 }
 
 // RegisterExt implements ExtRegistrar
-func (x *AskExt) RegisterExt(parser *args.Parser) {
+func (x *AskExt) RegisterExt(parser *flag.Parser) {
 	parser.AddExecExt(x)
 }

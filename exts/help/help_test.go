@@ -4,16 +4,16 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/codingbrain/clix.go/args"
+	"github.com/codingbrain/clix.go/flag"
 	"github.com/stretchr/testify/assert"
 )
 
 type testRender struct {
 	banner *BannerInfo
 	usage  *UsageInfo
-	cmds   []*args.Command
-	opts   []*args.Option
-	args   []*args.Option
+	cmds   []*flag.Command
+	opts   []*flag.Option
+	args   []*flag.Option
 	errs   []*ErrInfo
 
 	fwd HelpRender
@@ -45,21 +45,21 @@ func (r *testRender) RenderUsage(u *UsageInfo) {
 	}
 }
 
-func (r *testRender) RenderCommands(cmds []*args.Command) {
+func (r *testRender) RenderCommands(cmds []*flag.Command) {
 	r.cmds = cmds
 	if r.fwd != nil {
 		r.fwd.RenderCommands(cmds)
 	}
 }
 
-func (r *testRender) RenderOptions(opts []*args.Option) {
+func (r *testRender) RenderOptions(opts []*flag.Option) {
 	r.opts = opts
 	if r.fwd != nil {
 		r.fwd.RenderOptions(opts)
 	}
 }
 
-func (r *testRender) RenderArguments(opts []*args.Option) {
+func (r *testRender) RenderArguments(opts []*flag.Option) {
 	r.args = opts
 	if r.fwd != nil {
 		r.fwd.RenderArguments(opts)
@@ -120,9 +120,9 @@ const (
     `
 )
 
-func runParser(t *testing.T, cmdDef string, cmdArgs ...string) (*testRender, *args.ParseResult) {
+func runParser(t *testing.T, cmdDef string, cmdArgs ...string) (*testRender, *flag.ParseResult) {
 	a := assert.New(t)
-	if cli, err := args.DecodeCliDefString(cmdDef); a.NoError(err) {
+	if cli, err := flag.DecodeCliDefString(cmdDef); a.NoError(err) {
 		render := &testRender{fwd: &DefaultRender{}}
 		result := cli.
 			Use(NewExt().UseRender(render).NoExit()).
@@ -254,7 +254,7 @@ func TestHelpArgBadVal(t *testing.T) {
 
 func TestCustomHelpOptions(t *testing.T) {
 	a := assert.New(t)
-	if cli, err := args.DecodeCliDefString(testCmdDef1); a.NoError(err) {
+	if cli, err := flag.DecodeCliDefString(testCmdDef1); a.NoError(err) {
 		render := &testRender{fwd: &DefaultRender{}}
 		err = cli.
 			Use(NewExt().OptNames("sos", "!").UseRender(render).NoExit()).

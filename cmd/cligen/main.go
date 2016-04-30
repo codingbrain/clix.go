@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/codingbrain/clix.go/args"
 	"github.com/codingbrain/clix.go/exts/bind"
 	"github.com/codingbrain/clix.go/exts/help"
+	"github.com/codingbrain/clix.go/flag"
 	"github.com/codingbrain/clix.go/gen"
 
 	_ "github.com/codingbrain/clix.go/gen/golang"
@@ -32,7 +32,7 @@ func (c *genCmd) Execute([]string) error {
 		return fmt.Errorf("backend not found: %s", c.Backend)
 	}
 
-	def, err := args.DecodeCliDefFile(c.DefFile)
+	def, err := flag.DecodeCliDefFile(c.DefFile)
 	if err != nil {
 		return err
 	}
@@ -66,33 +66,33 @@ func backendNames() []string {
 }
 
 func main() {
-	cli := &args.CliDef{
-		Cli: &args.Command{
+	cli := &flag.CliDef{
+		Cli: &flag.Command{
 			Name: "cligen",
 			Desc: "Generate CLI code from definition file",
-			Commands: []*args.Command{
-				&args.Command{
+			Commands: []*flag.Command{
+				&flag.Command{
 					Name: "gen",
 					Desc: "Generate code",
-					Options: []*args.Option{
-						&args.Option{
+					Options: []*flag.Option{
+						&flag.Option{
 							Name:     "def-file",
 							Alias:    []string{"f"},
 							Desc:     "Commands definition file",
 							Required: true,
 						},
-						&args.Option{
+						&flag.Option{
 							Name:  "output",
 							Alias: []string{"o"},
 							Desc:  "Output file",
 						},
-						&args.Option{
+						&flag.Option{
 							Name:    "backend",
 							Alias:   []string{"b"},
 							Desc:    "Specify the backend, use backends to list all backends",
 							Default: backendNames()[0],
 						},
-						&args.Option{
+						&flag.Option{
 							Name:  "define",
 							Alias: []string{"D"},
 							Desc:  "Define backend specific parameters",
@@ -100,7 +100,7 @@ func main() {
 						},
 					},
 				},
-				&args.Command{
+				&flag.Command{
 					Name: "backends",
 					Desc: "List supported backends",
 				},

@@ -1,4 +1,4 @@
-package args
+package flag
 
 // CliDef is the top-level definition of command-line
 type CliDef struct {

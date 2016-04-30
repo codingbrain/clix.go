@@ -1,4 +1,4 @@
-package args
+package flag
 
 const (
 	EvtStartCmd   = "cmd.start"

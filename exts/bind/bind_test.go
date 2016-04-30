@@ -4,14 +4,14 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/codingbrain/clix.go/args"
+	"github.com/codingbrain/clix.go/flag"
 	"github.com/stretchr/testify/assert"
 )
 
 var cli = createCli()
 
-func createCli() *args.CliDef {
-	cli, err := args.DecodeCliDefString(`---
+func createCli() *flag.CliDef {
+	cli, err := flag.DecodeCliDefString(`---
 cli:
     name: test
     options:
@@ -181,7 +181,7 @@ type testBindSubCmd struct {
 
 func TestBindSubCmd(t *testing.T) {
 	a := assert.New(t)
-	cli, err := args.DecodeCliDefString(`---
+	cli, err := flag.DecodeCliDefString(`---
         cli:
             name: test
             options:
@@ -219,7 +219,7 @@ func (t *testBindExec) Execute(args []string) error {
 
 func TestBindExec(t *testing.T) {
 	a := assert.New(t)
-	cli, err := args.DecodeCliDefString(`---
+	cli, err := flag.DecodeCliDefString(`---
         cli:
             name: test
             options:
