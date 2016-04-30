@@ -19,8 +19,8 @@ Here's an example (from `test/istty`):
 ```go
 import (
   ...
-  
-	"github.com/codingbrain/clix.go/args"
+
+	"github.com/codingbrain/clix.go/flag"
 	"github.com/codingbrain/clix.go/exts/ask"
 	"github.com/codingbrain/clix.go/exts/bind"
 	"github.com/codingbrain/clix.go/exts/help"
@@ -38,11 +38,11 @@ func (c *isttyCmd) Execute(args []string) error {
 ...
 
 func main() {
-  cli := &args.CliDef{
-		Cli: &args.Command{
+  cli := &flag.CliDef{
+		Cli: &flag.Command{
 			Name: "istty",
-			Arguments: []*args.Option{
-				&args.Option{
+			Arguments: []*flag.Option{
+				&flag.Option{
 					Name:     "path",
 					Alias:    []string{"fd"},
 					Desc:     "path to device or file descriptor",
@@ -68,10 +68,10 @@ The parsing framework is as simple as defining a `CliDef`, and all magic happens
 ## TTY support with readline and password
 
 The `term` package provides simple and essential TTY support.
-By wrapping a `Terminal` object over input/output files (`os.File`), 
-it determines whether input/output is a TTY or not, 
+By wrapping a `Terminal` object over input/output files (`os.File`),
+it determines whether input/output is a TTY or not,
 and if ANSI escape codes and colors are support or not.
-In the application, it's free to emit output with ANSI escape codes, 
+In the application, it's free to emit output with ANSI escape codes,
 terminal will automatically strip them if the output doesn't support.
 
 It also provides basic support for reading line and password.
