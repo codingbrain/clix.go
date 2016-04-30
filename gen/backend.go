@@ -1,12 +1,12 @@
 package gen
 
-import "github.com/codingbrain/clix.go/args"
+import "github.com/codingbrain/clix.go/flag"
 
 // Backend is code generator
 type Backend interface {
 	// GenerateCode emits code to specified Writer
 	// Backend is able to reconfigure the indent settings of the writer
-	GenerateCode(*args.CliDef, *Writer) error
+	GenerateCode(*flag.CliDef, *Writer) error
 }
 
 // BackendParams is parameters for creating a backend

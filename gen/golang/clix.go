@@ -1,7 +1,7 @@
 package golang
 
 import (
-	"github.com/codingbrain/clix.go/args"
+	"github.com/codingbrain/clix.go/flag"
 	"github.com/codingbrain/clix.go/gen"
 )
 
@@ -27,7 +27,7 @@ const (
 	headerFormat = `// THIS FILE IS AUTO-GENERATED, DO NOT EDIT
 package %s
 
-import "github.com/codingbrain/clix.go/args"
+import "github.com/codingbrain/clix.go/flag"
 `
 )
 
@@ -51,7 +51,7 @@ func NewClixBackend(params gen.BackendParams) (gen.Backend, error) {
 }
 
 // GenerateCode implements Backend
-func (b *ClixBackend) GenerateCode(def *args.CliDef, w *gen.Writer) error {
+func (b *ClixBackend) GenerateCode(def *flag.CliDef, w *gen.Writer) error {
 	pkg := b.Package
 	if pkg == "" {
 		pkg = DefaultPackage
@@ -67,9 +67,9 @@ func (b *ClixBackend) GenerateCode(def *args.CliDef, w *gen.Writer) error {
 		w.Writeln("var %s = %s()", varName, factory)
 		w.Writeln("")
 	}
-	w.Writeln("func %s() *args.CliDef {", factory)
+	w.Writeln("func %s() *flag.CliDef {", factory)
 	w1 := w.Indent()
-	w1.Writeln("d := &args.CliDef{")
+	w1.Writeln("d := &flag.CliDef{")
 	printCommand(w1.Indent(), "Cli: ", def.Cli)
 	w1.Writeln("}")
 	w1.Writeln("d.Normalize()")
@@ -88,7 +88,7 @@ func pad(str string, minLen int) string {
 	return str
 }
 
-func printCommand(w *gen.Writer, prefix string, cmd *args.Command) {
+func printCommand(w *gen.Writer, prefix string, cmd *flag.Command) {
 	padding := 0
 	if len(cmd.Alias) > 0 {
 		padding = 1
@@ -98,7 +98,7 @@ func printCommand(w *gen.Writer, prefix string, cmd *args.Command) {
 	}
 	padding += 6
 
-	w.Writeln(prefix + "&args.Command{")
+	w.Writeln(prefix + "&flag.Command{")
 	w1 := w.Indent()
 	w1.Writeln(pad("Name:", padding)+"%#v,", cmd.Name)
 	if len(cmd.Alias) > 0 {
@@ -118,7 +118,7 @@ func printCommand(w *gen.Writer, prefix string, cmd *args.Command) {
 		printOptions(w1, "Arguments: ", cmd.Arguments)
 	}
 	if len(cmd.Commands) > 0 {
-		w1.Writeln("Commands: []*args.Command{")
+		w1.Writeln("Commands: []*flag.Command{")
 		w2 := w1.Indent()
 		for _, c := range cmd.Commands {
 			printCommand(w2, "", c)
@@ -128,8 +128,8 @@ func printCommand(w *gen.Writer, prefix string, cmd *args.Command) {
 	w.Writeln("},")
 }
 
-func printOptions(w *gen.Writer, prefix string, opts []*args.Option) {
-	w.Writeln(prefix + "[]*args.Option{")
+func printOptions(w *gen.Writer, prefix string, opts []*flag.Option) {
+	w.Writeln(prefix + "[]*flag.Option{")
 	w1 := w.Indent()
 	for _, opt := range opts {
 		padding := 0
@@ -143,7 +143,7 @@ func printOptions(w *gen.Writer, prefix string, opts []*args.Option) {
 			padding = 4
 		}
 		padding += 6
-		w1.Writeln("&args.Option{")
+		w1.Writeln("&flag.Option{")
 		w2 := w1.Indent()
 		w2.Writeln(pad("Name:", padding)+"%#v,", opt.Name)
 		if len(opt.Alias) > 0 {
