@@ -36,6 +36,7 @@ type ParsedCmd struct {
 	Args       []string
 	ParsedArgC int
 	Vars       map[string]interface{}
+	Opts       map[string]string
 	Errs       []*VarError
 }
 
@@ -70,6 +71,7 @@ type Parser struct {
 func newParsedCmd(cmd *Command) *ParsedCmd {
 	pcmd := &ParsedCmd{Cmd: cmd}
 	pcmd.Vars = make(map[string]interface{})
+	pcmd.Opts = make(map[string]string)
 	cmd.DefaultVars(pcmd.Vars)
 	return pcmd
 }
@@ -170,6 +172,7 @@ func (pcmd *ParsedCmd) assignOption(opt *Option, val string, valNot bool) (parse
 		}
 	}
 	pcmd.Vars[opt.Name] = parsedVal
+	pcmd.Opts[opt.Name] = val
 	return
 }
 

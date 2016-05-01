@@ -1,5 +1,5 @@
 OUTDIR=_out
-PKGS="clix args term exts/bind exts/help"
+PKGS="clix flag term exts/bind exts/help"
 
 env-setup() {
     mkdir -p $OUTDIR
