@@ -25,10 +25,15 @@ var (
 	Std = New(os.Stderr, os.Stdin)
 
 	ErrorInputUnavail = errors.New("input not available")
+	ErrorNotTTY       = errors.New("terminal is not a TTY")
 )
 
 func IsTTY(fd uintptr) bool {
 	return terminal.IsTerminal(int(fd))
+}
+
+func Size() (int, int, error) {
+	return Std.Size()
 }
 
 func Print(a ...interface{}) *Terminal {
@@ -142,6 +147,15 @@ func (t *Terminal) Write(p []byte) (int, error) {
 	} else {
 		return t.Out.Write(p)
 	}
+}
+
+func (t *Terminal) Size() (w, h int, err error) {
+	if !t.outTTY {
+		err = ErrorNotTTY
+	} else {
+		w, h, err = terminal.GetSize(int(t.out.Fd()))
+	}
+	return
 }
 
 func (t *Terminal) Input() (*Input, error) {
