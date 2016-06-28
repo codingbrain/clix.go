@@ -2,6 +2,7 @@ package flag
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -360,6 +361,76 @@ func TestNoSubCmd(t *testing.T) {
 	a.Empty(r.CmdStack)
 	a.False(r.MissingCmd)
 	a.Empty(r.Program)
+}
+
+type testParseArgExt struct {
+	t *testing.T
+}
+
+func (x *testParseArgExt) HandleParseEvent(event string, ctx *ParseContext) {
+	a := assert.New(x.t)
+	a.Equal(EvtParseArg, event)
+	if ctx.Name == "down" {
+		ctx.PushBack("up")
+		ctx.Ignore = true
+	}
+}
+
+func TestParseArgExt(t *testing.T) {
+	a := assert.New(t)
+	ext := &testParseArgExt{t: t}
+	r := cli.Parser().AddParseExt(EvtParseArg, ext).ParseArgs("cli", "down", "a1")
+	if a.False(r.HasErrors()) && a.Len(r.CmdStack, 2) {
+		cs := r.CmdStack[1]
+		a.Equal("up", cs.Cmd.Name)
+		a.Equal([]string{"a1"}, cs.Args)
+	}
+}
+
+type testShiftArgExt struct {
+	t *testing.T
+}
+
+func (x *testShiftArgExt) HandleParseEvent(event string, ctx *ParseContext) {
+	a := assert.New(x.t)
+	a.Equal(EvtShiftArg, event)
+	if !strings.HasSuffix(ctx.Name, ".shifted") {
+		ctx.PushBack(ctx.Name + ".shifted")
+		ctx.Ignore = true
+	}
+}
+
+func TestShiftArgExt(t *testing.T) {
+	a := assert.New(t)
+	ext := &testShiftArgExt{t: t}
+	r := cli.Parser().AddParseExt(EvtShiftArg, ext).ParseArgs("cli", "up", "a1")
+	if a.False(r.HasErrors()) && a.Len(r.CmdStack, 2) {
+		cs := r.CmdStack[1]
+		a.Equal("up", cs.Cmd.Name)
+		a.Equal([]string{"a1.shifted"}, cs.Args)
+	}
+}
+
+type testResolveCmdExt struct {
+	t *testing.T
+}
+
+func (x *testResolveCmdExt) HandleParseEvent(event string, ctx *ParseContext) {
+	a := assert.New(x.t)
+	a.Equal(EvtResolveCmd, event)
+	ctx.PushBack(ctx.Name)
+	ctx.Ignore = true
+	ctx.ParseEnd()
+}
+
+func TestResolveCmdExt(t *testing.T) {
+	a := assert.New(t)
+	ext := &testResolveCmdExt{t: t}
+	r := cli.Parser().AddParseExt(EvtResolveCmd, ext).ParseArgs("cli", "upX", "a1")
+	if a.False(r.HasErrors()) && a.Len(r.CmdStack, 1) {
+		cs := r.CmdStack[0]
+		a.Equal([]string{"upX", "a1"}, cs.Args)
+	}
 }
 
 type testStartCmdExt struct {

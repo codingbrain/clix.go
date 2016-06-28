@@ -64,6 +64,8 @@ type Parser struct {
 	optName  string
 	stackPos int
 
+	pushBack []string
+
 	// extensions
 	exts map[string][]ParseExt
 }
@@ -221,6 +223,8 @@ func (p *Parser) invokeExts(event string, ctx *ParseContext) {
 	if ctx.abortErr != nil {
 		p.result.Error = ctx.abortErr
 		p.state = stateErrEnd
+	} else if ctx.parseEnd {
+		p.state = stateEnd
 	}
 }
 
@@ -257,12 +261,16 @@ func (p *Parser) assignOption(at int, opt *Option, val string, valNot bool) {
 }
 
 func (p *Parser) pushArg(arg string) {
-	pcmd := p.currCmd
-	at := len(pcmd.Args)
-	pcmd.Args = append(pcmd.Args, arg)
-	if at < len(pcmd.Cmd.Arguments) {
-		pcmd.ParsedArgC++
-		p.assignOption(len(p.result.CmdStack)-1, pcmd.Cmd.Arguments[at], arg, false)
+	ctx := &ParseContext{Name: arg}
+	p.invokeExts(EvtShiftArg, ctx)
+	if !ctx.Ignore {
+		pcmd := p.currCmd
+		at := len(pcmd.Args)
+		pcmd.Args = append(pcmd.Args, arg)
+		if at < len(pcmd.Cmd.Arguments) {
+			pcmd.ParsedArgC++
+			p.assignOption(len(p.result.CmdStack)-1, pcmd.Cmd.Arguments[at], arg, false)
+		}
 	}
 }
 
@@ -275,12 +283,33 @@ func (p *Parser) resolveUnknownOption(name string, val *string) {
 }
 
 func (p *Parser) resolveUnknownCommand(cmd string) {
-	p.result.MissingCmd = true
-	p.result.UnparsedArgs = []string{cmd}
-	p.state = stateErr
+	ctx := &ParseContext{Name: cmd}
+	p.invokeExts(EvtResolveCmd, ctx)
+	if !ctx.Ignore {
+		p.result.MissingCmd = true
+		p.result.UnparsedArgs = []string{cmd}
+		p.state = stateErr
+	}
 }
 
 func (p *Parser) parseArg(arg string) {
+	ctx := &ParseContext{Name: arg}
+	p.invokeExts(EvtParseArg, ctx)
+	if !ctx.Ignore {
+		if p.currCmd.hasSubCommands() {
+			pcmd := p.currCmd.startSubCommand(arg)
+			if pcmd != nil {
+				p.pushCommand(pcmd)
+			} else {
+				p.resolveUnknownCommand(arg)
+			}
+		} else {
+			p.pushArg(arg)
+		}
+	}
+}
+
+func (p *Parser) parseOne(arg string) {
 	switch p.state {
 	case statePre:
 		p.startParsing(arg)
@@ -352,15 +381,8 @@ func (p *Parser) parseArg(arg string) {
 					p.state = stateVal
 				}
 			}
-		} else if p.currCmd.hasSubCommands() {
-			pcmd := p.currCmd.startSubCommand(arg)
-			if pcmd != nil {
-				p.pushCommand(pcmd)
-			} else {
-				p.resolveUnknownCommand(arg)
-			}
 		} else {
-			p.pushArg(arg)
+			p.parseArg(arg)
 		}
 	case stateVal:
 		p.assignOption(p.stackPos, p.option, arg, false)
@@ -376,6 +398,15 @@ func (p *Parser) parseArg(arg string) {
 		}
 	case stateErrEnd:
 		p.result.UnparsedArgs = append(p.result.UnparsedArgs, arg)
+	}
+}
+
+func (p *Parser) parse(arg string) {
+	args := []string{arg}
+	for len(args) > 0 {
+		p.parseOne(args[0])
+		args = append(args[1:], p.pushBack...)
+		p.pushBack = nil
 	}
 }
 
@@ -402,7 +433,7 @@ func (p *Parser) parseEnd() error {
 // ParseArgs parses a slice of arguments including args[0]
 func (p *Parser) ParseArgs(args ...string) *ParseResult {
 	for _, arg := range args {
-		p.parseArg(arg)
+		p.parse(arg)
 	}
 	p.result.Error = p.parseEnd()
 	return &p.result

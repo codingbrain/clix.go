@@ -1,7 +1,10 @@
 package flag
 
 const (
+	EvtParseArg   = "arg.parse"
+	EvtShiftArg   = "arg.shift"
 	EvtStartCmd   = "cmd.start"
+	EvtResolveCmd = "cmd.resolve"
 	EvtAssignOpt  = "opt.assign"
 	EvtAssigned   = "var.assigned"
 	EvtResolveOpt = "opt.resolve"
@@ -19,6 +22,7 @@ type ParseContext struct {
 	parser   *Parser
 	stopped  bool
 	abortErr error
+	parseEnd bool
 }
 
 func (c *ParseContext) Done() {
@@ -28,6 +32,10 @@ func (c *ParseContext) Done() {
 func (c *ParseContext) Abort(err error) {
 	c.stopped = true
 	c.abortErr = err
+}
+
+func (c *ParseContext) ParseEnd() {
+	c.parseEnd = true
 }
 
 func (c *ParseContext) CmdStack() []*ParsedCmd {
@@ -54,6 +62,11 @@ func (c *ParseContext) SetVarAt(at int, name string, val interface{}) *ParseCont
 
 func (c *ParseContext) SetVar(name string, val interface{}) *ParseContext {
 	c.CurrentCmd().Vars[name] = val
+	return c
+}
+
+func (c *ParseContext) PushBack(args ...string) *ParseContext {
+	c.parser.pushBack = append(c.parser.pushBack, args...)
 	return c
 }
 
