@@ -146,7 +146,9 @@ func (r *DefaultRender) RenderOptions(opts []*flag.Option) {
 			}
 		}
 		if opt.Required {
-			row.col[1] = "[Required] " + opt.Desc
+			row.col[1] = "<Required> " + opt.Desc
+		} else if defVal := opt.DefaultAsString(); defVal != "" {
+			row.col[1] = "[" + defVal + "] " + opt.Desc
 		} else {
 			row.col[1] = opt.Desc
 		}
