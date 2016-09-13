@@ -175,8 +175,9 @@ func TestStructBindBytes(t *testing.T) {
 }
 
 type testBindSubCmd struct {
-	ParentOpt string
-	Opt       string
+	ParentOpt  string
+	OptWithDef string
+	Opt        string
 }
 
 func TestBindSubCmd(t *testing.T) {
@@ -186,6 +187,37 @@ func TestBindSubCmd(t *testing.T) {
             name: test
             options:
                 - name: parentopt
+                - name: optwithdef
+                  default: opt
+            commands:
+                - name: cmd
+                  options:
+                      - name: opt
+                        type: string
+    `)
+	if a.NoError(err) {
+		s := &testBindSubCmd{}
+		err = cli.
+			Use(NewExt().Bind(s, "cmd")).
+			ParseArgs("test", "--parentopt=parent", "cmd", "--opt=ok").
+			Exec()
+		if a.NoError(err) {
+			a.Equal("ok", s.Opt)
+			a.Equal("parent", s.ParentOpt)
+			a.Equal("opt", s.OptWithDef)
+		}
+	}
+}
+
+func TestBindSubCmdTailOpt(t *testing.T) {
+	a := assert.New(t)
+	cli, err := flag.DecodeCliDefString(`---
+        cli:
+            name: test
+            options:
+                - name: parentopt
+                - name: optwithdef
+                  default: opt
             commands:
                 - name: cmd
                   options:
@@ -201,6 +233,7 @@ func TestBindSubCmd(t *testing.T) {
 		if a.NoError(err) {
 			a.Equal("ok", s.Opt)
 			a.Equal("parent", s.ParentOpt)
+			a.Equal("opt", s.OptWithDef)
 		}
 	}
 }

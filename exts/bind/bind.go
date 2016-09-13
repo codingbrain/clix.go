@@ -51,8 +51,11 @@ func (x *BindExt) HandleParseEvent(event string, ctx *flag.ParseContext) {
 	if event != flag.EvtAssigned {
 		return
 	}
-	if b, exists := x.b[keyFromStack(ctx.CmdStack())]; exists {
-		b.update(ctx.Option, ctx.Name, ctx.Assigned)
+	prefix := keyFromStack(ctx.CmdStack())
+	for k, b := range x.b {
+		if prefix == "" || k == prefix || strings.HasPrefix(k, prefix+" ") {
+			b.update(ctx.Option, ctx.Name, ctx.Assigned)
+		}
 	}
 }
 
